@@ -224,7 +224,7 @@ void DrmPreview::findPlane() {
     }
 
   drmModeFreePlaneResources(planes);
-
+  }
 //}}}
 
 //{{{
