@@ -1,22 +1,29 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * file_output.cpp - Write output to file.
  */
-
+//}}}
+//{{{  includes
 #include "file_output.hpp"
+//}}}
 
+//{{{
 FileOutput::FileOutput(VideoOptions const *options)
 	: Output(options), fp_(nullptr), count_(0), file_start_time_ms_(0)
 {
 }
-
+//}}}
+//{{{
 FileOutput::~FileOutput()
 {
 	closeFile();
 }
+//}}}
 
+//{{{
 void FileOutput::outputBuffer(void *mem, size_t size, int64_t timestamp_us, uint32_t flags)
 {
 	// We need to open a new file if we're in "segment" mode and our segment is full
@@ -40,7 +47,9 @@ void FileOutput::outputBuffer(void *mem, size_t size, int64_t timestamp_us, uint
 			fflush(fp_);
 	}
 }
+//}}}
 
+//{{{
 void FileOutput::openFile(int64_t timestamp_us)
 {
 	if (options_->output == "-")
@@ -64,7 +73,8 @@ void FileOutput::openFile(int64_t timestamp_us)
 		file_start_time_ms_ = timestamp_us / 1000;
 	}
 }
-
+//}}}
+//{{{
 void FileOutput::closeFile()
 {
 	if (fp_)
@@ -76,3 +86,4 @@ void FileOutput::closeFile()
 		fp_ = nullptr;
 	}
 }
+//}}}
