@@ -17,7 +17,7 @@ using namespace std::placeholders;
 
 // The main event loop for the application.
 //{{{
-static void event_loop (LibcameraApp &app) {
+static void event_loop (LibcameraApp& app) {
 
 	Options const* options = app.GetOptions();
 
@@ -58,11 +58,11 @@ int main (int argc, char* argv[]) {
 	try {
 		LibcameraApp app;
 		Options *options = app.GetOptions();
-		if (options->Parse(argc, argv)) {
+		if (options->Parse (argc, argv)) {
 			if (options->verbose >= 2)
 				options->Print();
 
-			event_loop(app);
+			event_loop (app);
 			}
 		}
 	catch (std::exception const &e) {

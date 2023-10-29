@@ -8,7 +8,7 @@
 
 // Example: libcamera-detect --post-process-file object_detect_tf.json --lores-width 400 --lores-height 300 -t 0 --object cat -o cat%03d.jpg
 //}}}
-//{{{  includes
+//{{{
 #include <chrono>
 
 #include "core/libcamera_app.hpp"
@@ -45,17 +45,19 @@ struct DetectOptions : public StillOptions
 	}
 };
 //}}}
-
-class LibcameraDetectApp : public LibcameraApp {
+//{{{
+class LibcameraDetectApp : public LibcameraApp
+{
 public:
-	LibcameraDetectApp() : LibcameraApp (std::make_unique<DetectOptions>()) {}
-	DetectOptions* GetOptions() const { return static_cast<DetectOptions*>(options_.get()); }
-	};
+	LibcameraDetectApp() : LibcameraApp(std::make_unique<DetectOptions>()) {}
+	DetectOptions *GetOptions() const { return static_cast<DetectOptions *>(options_.get()); }
+};
+//}}}
 
 //{{{
 // The main even loop for the application.
 
-static void event_loop (LibcameraDetectApp& app)
+static void event_loop(LibcameraDetectApp &app)
 {
 	DetectOptions *options = app.GetOptions();
 	app.OpenCamera();
@@ -144,7 +146,7 @@ static void event_loop (LibcameraDetectApp& app)
 }
 //}}}
 //{{{
-int main (int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	try
 	{

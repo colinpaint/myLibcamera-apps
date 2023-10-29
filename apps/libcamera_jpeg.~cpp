@@ -6,7 +6,8 @@
  * libcamera_jpeg.cpp - minimal libcamera jpeg capture app.
  */
 //}}}
-//{{{  includes
+
+//{{{
 #include <chrono>
 
 #include "core/libcamera_app.hpp"
@@ -18,16 +19,26 @@ using namespace std::placeholders;
 using libcamera::Stream;
 //}}}
 
-class LibcameraJpegApp : public LibcameraApp {
+//{{{
+class LibcameraJpegApp : public LibcameraApp
+{
 public:
-	LibcameraJpegApp() : LibcameraApp(std::make_unique<StillOptions>()) {}
-	StillOptions *GetOptions() const { return static_cast<StillOptions *>(options_.get()); }
-	};
+	LibcameraJpegApp()
+		: LibcameraApp(std::make_unique<StillOptions>())
+	{
+	}
+
+	StillOptions *GetOptions() const
+	{
+		return static_cast<StillOptions *>(options_.get());
+	}
+};
+//}}}
 
 //{{{
 // The main even loop for the application.
 
-static void event_loop (LibcameraJpegApp& app)
+static void event_loop(LibcameraJpegApp &app)
 {
 	StillOptions const *options = app.GetOptions();
 	app.OpenCamera();
@@ -87,7 +98,7 @@ static void event_loop (LibcameraJpegApp& app)
 //}}}
 
 //{{{
-int main (int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	try
 	{
