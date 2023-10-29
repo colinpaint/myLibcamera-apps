@@ -1,12 +1,13 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * options.hpp - common program options
  */
-
+//}}}
 #pragma once
-
+//{{{  includes
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -22,9 +23,10 @@
 
 #include "core/logging.hpp"
 #include "core/version.hpp"
+//}}}
 
 static constexpr double DEFAULT_FRAMERATE = 30.0;
-
+//{{{
 struct Mode
 {
 	Mode() : Mode(0, 0, 0, true) {}
@@ -39,9 +41,9 @@ struct Mode
 	std::string ToString() const;
 	void update(const libcamera::Size &size, const std::optional<float> &fps);
 };
-
-template <typename DEFAULT>
-struct TimeVal
+//}}}
+//{{{
+template <typename DEFAULT> struct TimeVal
 {
 	TimeVal() : value(0) {}
 
@@ -91,9 +93,11 @@ struct TimeVal
 
 	std::chrono::nanoseconds value;
 };
+//}}}
 
-struct Options
-{
+//{{{
+struct Options {
+	//{{{
 	Options()
 		: set_default_lens_position(false), af_on_capture(false), options_("Valid options are", 120, 80), app_(nullptr)
 	{
@@ -217,7 +221,7 @@ struct Options
 			;
 		// clang-format on
 	}
-
+	//}}}
 	virtual ~Options() {}
 
 	bool help;
@@ -307,3 +311,4 @@ private:
 	std::string flicker_period_;
 	LibcameraApp *app_;
 };
+//}}}

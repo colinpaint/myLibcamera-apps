@@ -1,10 +1,12 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * h264_encoder.cpp - h264 video encoder.
  */
-
+//}}}
+//{{{  includes
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -16,7 +18,9 @@
 #include <iostream>
 
 #include "h264_encoder.hpp"
+//}}}
 
+//{{{
 static int xioctl(int fd, unsigned long ctl, void *arg)
 {
 	int ret, num_tries = 10;
@@ -26,7 +30,8 @@ static int xioctl(int fd, unsigned long ctl, void *arg)
 	} while (ret == -1 && errno == EINTR && num_tries-- > 0);
 	return ret;
 }
-
+//}}}
+//{{{
 static int get_v4l2_colorspace(std::optional<libcamera::ColorSpace> const &cs)
 {
 	if (cs == libcamera::ColorSpace::Rec709)
@@ -37,7 +42,9 @@ static int get_v4l2_colorspace(std::optional<libcamera::ColorSpace> const &cs)
 	LOG(1, "H264: surprising colour space: " << libcamera::ColorSpace::toString(cs));
 	return V4L2_COLORSPACE_SMPTE170M;
 }
+//}}}
 
+//{{{
 H264Encoder::H264Encoder(VideoOptions const *options, StreamInfo const &info)
 	: Encoder(options), abortPoll_(false), abortOutput_(false)
 {
@@ -63,8 +70,8 @@ H264Encoder::H264Encoder(VideoOptions const *options, StreamInfo const &info)
 	{
 		static const std::map<std::string, int> profile_map =
 			{ { "baseline", V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE },
-			  { "main", V4L2_MPEG_VIDEO_H264_PROFILE_MAIN },
-			  { "high", V4L2_MPEG_VIDEO_H264_PROFILE_HIGH } };
+				{ "main", V4L2_MPEG_VIDEO_H264_PROFILE_MAIN },
+				{ "high", V4L2_MPEG_VIDEO_H264_PROFILE_HIGH } };
 		auto it = profile_map.find(options->profile);
 		if (it == profile_map.end())
 			throw std::runtime_error("no such profile " + options->profile);
@@ -77,8 +84,8 @@ H264Encoder::H264Encoder(VideoOptions const *options, StreamInfo const &info)
 	{
 		static const std::map<std::string, int> level_map =
 			{ { "4", V4L2_MPEG_VIDEO_H264_LEVEL_4_0 },
-			  { "4.1", V4L2_MPEG_VIDEO_H264_LEVEL_4_1 },
-			  { "4.2", V4L2_MPEG_VIDEO_H264_LEVEL_4_2 } };
+				{ "4.1", V4L2_MPEG_VIDEO_H264_LEVEL_4_1 },
+				{ "4.2", V4L2_MPEG_VIDEO_H264_LEVEL_4_2 } };
 		auto it = level_map.find(options->level);
 		if (it == level_map.end())
 			throw std::runtime_error("no such level " + options->level);
@@ -181,7 +188,7 @@ H264Encoder::H264Encoder(VideoOptions const *options, StreamInfo const &info)
 		if (xioctl(fd_, VIDIOC_QUERYBUF, &buffer) < 0)
 			throw std::runtime_error("failed to capture query buffer " + std::to_string(i));
 		buffers_[i].mem = mmap(0, buffer.m.planes[0].length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_,
-							   buffer.m.planes[0].m.mem_offset);
+								 buffer.m.planes[0].m.mem_offset);
 		if (buffers_[i].mem == MAP_FAILED)
 			throw std::runtime_error("failed to mmap capture buffer " + std::to_string(i));
 		buffers_[i].size = buffer.m.planes[0].length;
@@ -204,7 +211,8 @@ H264Encoder::H264Encoder(VideoOptions const *options, StreamInfo const &info)
 	output_thread_ = std::thread(&H264Encoder::outputThread, this);
 	poll_thread_ = std::thread(&H264Encoder::pollThread, this);
 }
-
+//}}}
+//{{{
 H264Encoder::~H264Encoder()
 {
 	abortPoll_ = true;
@@ -242,7 +250,9 @@ H264Encoder::~H264Encoder()
 	close(fd_);
 	LOG(2, "H264Encoder closed");
 }
+//}}}
 
+//{{{
 void H264Encoder::EncodeBuffer(int fd, size_t size, void *mem, StreamInfo const &info, int64_t timestamp_us)
 {
 	int index;
@@ -271,7 +281,9 @@ void H264Encoder::EncodeBuffer(int fd, size_t size, void *mem, StreamInfo const 
 	if (xioctl(fd_, VIDIOC_QBUF, &buf) < 0)
 		throw std::runtime_error("failed to queue input to codec");
 }
+//}}}
 
+//{{{
 void H264Encoder::pollThread()
 {
 	while (true)
@@ -335,7 +347,8 @@ void H264Encoder::pollThread()
 		}
 	}
 }
-
+//}}}
+//{{{
 void H264Encoder::outputThread()
 {
 	OutputItem item;
@@ -376,3 +389,4 @@ void H264Encoder::outputThread()
 			throw std::runtime_error("failed to re-queue encoded buffer");
 	}
 }
+//}}}

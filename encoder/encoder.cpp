@@ -1,10 +1,12 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * encoder.cpp - Video encoder class.
  */
-
+//}}}
+//{{{  includes
 #include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -20,7 +22,9 @@
 #if LIBAV_PRESENT
 #include "libav_encoder.hpp"
 #endif
+//}}}
 
+//{{{
 Encoder *h264_codec_select(VideoOptions *options, const StreamInfo &info)
 {
 	const char hw_codec[] = "/dev/video11";
@@ -43,7 +47,8 @@ Encoder *h264_codec_select(VideoOptions *options, const StreamInfo &info)
 
 	throw std::runtime_error("Unable to find an appropriate H.264 codec");
 }
-
+//}}}
+//{{{
 Encoder *Encoder::Create(VideoOptions *options, const StreamInfo &info)
 {
 	if (strcasecmp(options->codec.c_str(), "yuv420") == 0)
@@ -58,3 +63,4 @@ Encoder *Encoder::Create(VideoOptions *options, const StreamInfo &info)
 		return new MjpegEncoder(options);
 	throw std::runtime_error("Unrecognised codec " + options->codec);
 }
+//}}}

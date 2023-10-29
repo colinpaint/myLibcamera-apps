@@ -1,12 +1,13 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
  * libav_encoder.hpp - libav video encoder.
  */
-
+//}}}
 #pragma once
-
+//{{{  includes
 #include <atomic>
 #include <condition_variable>
 #include <memory>
@@ -29,6 +30,7 @@ extern "C"
 }
 
 #include "encoder.hpp"
+//}}}
 
 class LibAvEncoder : public Encoder
 {

@@ -173,13 +173,19 @@ static int get_key_or_signal (StillOptions const* options, pollfd p[1]) {
 	}
 //}}}
 
-// The main even loop for the application.
 //{{{
 static void event_loop (LibcameraStillApp &app) {
+// The main even loop for the application.
 
-	StillOptions const *options = app.GetOptions();
-	bool output = !options->output.empty() || options->datetime || options->timestamp; // output requested?
-	bool keypress = options->keypress || options->signal; // "signal" mode is much like "keypress" mode
+	StillOptions const* options = app.GetOptions();
+
+	bool output = !options->output.empty() || 
+								options->datetime || 
+								options->timestamp; 
+
+	// "signal" mode is much like "keypress" mode
+	bool keypress = options->keypress || options->signal; 
+
 	unsigned int still_flags = LibcameraApp::FLAG_STILL_NONE;
 	if (options->encoding == "rgb" || options->encoding == "png")
 		still_flags |= LibcameraApp::FLAG_STILL_BGR;
@@ -191,19 +197,19 @@ static void event_loop (LibcameraStillApp &app) {
 	app.OpenCamera();
 
 	// Monitoring for keypresses and signals.
-	signal(SIGUSR1, default_signal_handler);
-	signal(SIGUSR2, default_signal_handler);
+	signal (SIGUSR1, default_signal_handler);
+	signal (SIGUSR2, default_signal_handler);
 	pollfd p[1] = { { STDIN_FILENO, POLLIN, 0 } };
 
 	if (options->immediate) {
-		app.ConfigureStill(still_flags);
+		app.ConfigureStill (still_flags);
 		while (keypress) {
 			int key = get_key_or_signal(options, p);
 			if (key == 'x' || key == 'X')
 				return;
 			else if (key == '\n')
 				break;
-			std::this_thread::sleep_for(10ms);
+			std::this_thread::sleep_for (10ms);
 			}
 		}
 	else if (options->zsl)
@@ -219,14 +225,14 @@ static void event_loop (LibcameraStillApp &app) {
 	constexpr int TIMELAPSE_MIN_FRAMES = 6; // at least this many preview frames between captures
 	bool keypressed = false;
 
-	enum { AF_WAIT_NONE, AF_WAIT_SCANNING, AF_WAIT_FINISHED } af_wait_state = AF_WAIT_NONE; 
+	enum { AF_WAIT_NONE, AF_WAIT_SCANNING, AF_WAIT_FINISHED } af_wait_state = AF_WAIT_NONE;
 	int af_wait_timeout = 0;
 
 	bool want_capture = false;
 	for (unsigned int count = 0;; count++) {
 		LibcameraApp::Msg msg = app.Wait();
 		if (msg.type == LibcameraApp::MsgType::Timeout) {
-			LOG_ERROR("ERROR: Device timeout detected, attempting a restart!!!");
+			LOG_ERROR ("ERROR: Device timeout detected, attempting a restart!!!");
 			app.StopCamera();
 			app.StartCamera();
 			continue;
@@ -234,11 +240,11 @@ static void event_loop (LibcameraStillApp &app) {
 		if (msg.type == LibcameraApp::MsgType::Quit)
 			return;
 		else if (msg.type != LibcameraApp::MsgType::RequestComplete)
-			throw std::runtime_error("unrecognised message!");
+			throw std::runtime_error ("unrecognised message!");
 
 		CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
 		auto now = std::chrono::high_resolution_clock::now();
-		int key = get_key_or_signal(options, p);
+		int key = get_key_or_signal (options, p);
 		if (key == 'x' || key == 'X')
 			return;
 		if (key == '\n')
@@ -248,13 +254,13 @@ static void event_loop (LibcameraStillApp &app) {
 		// if the "--autofocus-on-capture" option was set, trigger an AF scan and wait
 		// for it to complete. Then switch to capture mode if an output was requested.
 		if (app.ViewfinderStream() && !want_capture) {
-			LOG(2, "Viewfinder frame " << count);
+			LOG (2, "Viewfinder frame " << count);
 			timelapse_frames++;
 
 			bool timed_out = options->timeout && (now - start_time) > options->timeout.value;
 			bool timelapse_timed_out = options->timelapse &&
-										 (now - timelapse_time) > options->timelapse.value &&
-										 timelapse_frames >= TIMELAPSE_MIN_FRAMES;
+																 (now - timelapse_time) > options->timelapse.value &&
+																 timelapse_frames >= TIMELAPSE_MIN_FRAMES;
 
 			if (af_wait_state != AF_WAIT_NONE) {
 				FrameInfo fi(completed_request->metadata);
@@ -272,9 +278,9 @@ static void event_loop (LibcameraStillApp &app) {
 				keypressed = false;
 				if (options->af_on_capture) {
 					libcamera::ControlList cl;
-					cl.set(libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
-					cl.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerStart);
-					app.SetControls(cl);
+					cl.set (libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
+					cl.set (libcamera::controls::AfTrigger, libcamera::controls::AfTriggerStart);
+					app.SetControls (cl);
 					af_wait_state = AF_WAIT_SCANNING;
 					af_wait_timeout = 0;
 					}
@@ -291,20 +297,20 @@ static void event_loop (LibcameraStillApp &app) {
 				if (!options->zsl) {
 					app.StopCamera();
 					app.Teardown();
-					app.ConfigureStill(still_flags);
+					app.ConfigureStill (still_flags);
 					}
 
 				if (options->af_on_capture) {
 					libcamera::ControlList cl;
-					cl.set(libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
-					cl.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
-					app.SetControls(cl);
+					cl.set (libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
+					cl.set (libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
+					app.SetControls (cl);
 					}
 				if (!options->zsl)
-					app.StartCamera();
+					app.StartCamera ();
 				}
 			else
-				app.ShowPreview(completed_request, app.ViewfinderStream());
+				app.ShowPreview (completed_request, app.ViewfinderStream());
 			}
 
 		// In still capture mode, save a jpeg. Go back to viewfinder if in timelapse mode, otherwise quit.
@@ -314,20 +320,24 @@ static void event_loop (LibcameraStillApp &app) {
 				app.StopCamera();
 			LOG(1, "Still capture image received");
 			save_images(app, completed_request);
+
 			if (!options->metadata.empty())
 				save_metadata(options, completed_request->metadata);
+
 			timelapse_frames = 0;
 			if (!options->immediate && (options->timelapse || options->signal || options->keypress)) {
 				if (!options->zsl) {
 					app.Teardown();
 					app.ConfigureViewfinder();
 					}
+
 				if (options->af_on_capture && options->afMode_index == -1) {
 					libcamera::ControlList cl;
 					cl.set(libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
 					cl.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
 					app.SetControls(cl);
 					}
+
 				if (!options->zsl)
 					app.StartCamera();
 				af_wait_state = AF_WAIT_NONE;

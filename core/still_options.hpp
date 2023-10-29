@@ -7,21 +7,24 @@
  */
 //}}}
 #pragma once
+//{{{  includes
 #include <cstdio>
 #include "options.hpp"
+//}}}
 
-struct StillOptions : public Options
-{
+struct StillOptions : public Options {
 	//{{{
-	StillOptions() : Options()
-	{
+	StillOptions() : Options() {
 		using namespace boost::program_options;
+
 		// clang-format off
 		options_.add_options()
 			("quality,q", value<int>(&quality)->default_value(93),
 			 "Set the JPEG quality parameter")
+
 			("exif,x", value<std::vector<std::string>>(&exif),
 			 "Add these extra EXIF tags to the output file")
+
 			("timelapse", value<std::string>(&timelapse_)->default_value("0ms"),
 			 "Time interval between timelapse captures. If no units are provided default to ms.")
 			("framestart", value<uint32_t>(&framestart)->default_value(0),
@@ -30,22 +33,29 @@ struct StillOptions : public Options
 			 "Use date format for output file names")
 			("timestamp", value<bool>(&timestamp)->default_value(false)->implicit_value(true),
 			 "Use system timestamps for output file names")
+
 			("restart", value<unsigned int>(&restart)->default_value(0),
 			 "Set JPEG restart interval")
+
 			("keypress,k", value<bool>(&keypress)->default_value(false)->implicit_value(true),
 			 "Perform capture when ENTER pressed")
 			("signal,s", value<bool>(&signal)->default_value(false)->implicit_value(true),
 			 "Perform capture when signal received")
+
 			("thumb", value<std::string>(&thumb)->default_value("320:240:70"),
 			 "Set thumbnail parameters as width:height:quality, or none")
+
 			("encoding,e", value<std::string>(&encoding)->default_value("jpg"),
 			 "Set the desired output encoding, either jpg, png, rgb, bmp or yuv420")
 			("raw,r", value<bool>(&raw)->default_value(false)->implicit_value(true),
 			 "Also save raw file in DNG format")
+
 			("latest", value<std::string>(&latest),
 			 "Create a symbolic link with this name to most recent saved file")
+
 			("immediate", value<bool>(&immediate)->default_value(false)->implicit_value(true),
 			 "Perform first capture immediately, with no preview phase")
+
 			("autofocus-on-capture", value<bool>(&af_on_capture)->default_value(false)->implicit_value(true),
 			 "Switch to AfModeAuto and trigger a scan just before capturing a still")
 			("zsl", value<bool>(&zsl)->default_value(false)->implicit_value(true),

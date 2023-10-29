@@ -1,24 +1,28 @@
+//{{{
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * mjpeg_encoder.cpp - mjpeg video encoder.
  */
-
+//}}}
+//{{{  includes
 #include <chrono>
 #include <iostream>
 
 #include <jpeglib.h>
 
 #include "mjpeg_encoder.hpp"
+//}}}
 
 #if JPEG_LIB_VERSION_MAJOR > 9 || (JPEG_LIB_VERSION_MAJOR == 9 && JPEG_LIB_VERSION_MINOR >= 4)
-typedef size_t jpeg_mem_len_t;
+	typedef size_t jpeg_mem_len_t;
 #else
-typedef unsigned long jpeg_mem_len_t;
+	typedef unsigned long jpeg_mem_len_t;
 #endif
 
-MjpegEncoder::MjpegEncoder(VideoOptions const *options)
+//{{{
+MjpegEncoder::MjpegEncoder (VideoOptions const *options)
 	: Encoder(options), abortEncode_(false), abortOutput_(false), index_(0)
 {
 	output_thread_ = std::thread(&MjpegEncoder::outputThread, this);
@@ -26,7 +30,8 @@ MjpegEncoder::MjpegEncoder(VideoOptions const *options)
 		encode_thread_[i] = std::thread(std::bind(&MjpegEncoder::encodeThread, this, i));
 	LOG(2, "Opened MjpegEncoder");
 }
-
+//}}}
+//{{{
 MjpegEncoder::~MjpegEncoder()
 {
 	abortEncode_ = true;
@@ -36,8 +41,10 @@ MjpegEncoder::~MjpegEncoder()
 	output_thread_.join();
 	LOG(2, "MjpegEncoder closed");
 }
+//}}}
 
-void MjpegEncoder::EncodeBuffer(int fd, size_t size, void *mem, StreamInfo const &info, int64_t timestamp_us)
+//{{{
+void MjpegEncoder::EncodeBuffer (int fd, size_t size, void *mem, StreamInfo const &info, int64_t timestamp_us)
 {
 	std::lock_guard<std::mutex> lock(encode_mutex_);
 	EncodeItem item = { mem, info, timestamp_us, index_++ };
@@ -45,8 +52,10 @@ void MjpegEncoder::EncodeBuffer(int fd, size_t size, void *mem, StreamInfo const
 	encode_cond_var_.notify_all();
 }
 
-void MjpegEncoder::encodeJPEG(struct jpeg_compress_struct &cinfo, EncodeItem &item, uint8_t *&encoded_buffer,
-							  size_t &buffer_len)
+//}}}
+//{{{
+void MjpegEncoder::encodeJPEG (struct jpeg_compress_struct &cinfo, EncodeItem &item, uint8_t *&encoded_buffer,
+								size_t &buffer_len)
 {
 	// Copied from YUV420_to_JPEG_fast in jpeg.cpp.
 	cinfo.image_width = item.info.width;
@@ -90,8 +99,10 @@ void MjpegEncoder::encodeJPEG(struct jpeg_compress_struct &cinfo, EncodeItem &it
 	jpeg_finish_compress(&cinfo);
 	buffer_len = jpeg_mem_len;
 }
+//}}}
 
-void MjpegEncoder::encodeThread(int num)
+//{{{
+void MjpegEncoder::encodeThread (int num)
 {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
@@ -146,7 +157,8 @@ void MjpegEncoder::encodeThread(int num)
 		output_cond_var_.notify_one();
 	}
 }
-
+//}}}
+//{{{
 void MjpegEncoder::outputThread()
 {
 	OutputItem item;
@@ -191,3 +203,4 @@ void MjpegEncoder::outputThread()
 		index++;
 	}
 }
+//}}}
