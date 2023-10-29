@@ -6,8 +6,7 @@
  * buffer_sync.cpp - Buffer coherency handling
  */
 //}}}
-
-//{{{
+//{{{  includes
 #include <linux/dma-buf.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -18,74 +17,59 @@
 //}}}
 
 //{{{
-BufferWriteSync::BufferWriteSync(LibcameraApp *app, libcamera::FrameBuffer *fb)
-	: fb_(fb)
-{
-	struct dma_buf_sync dma_sync {};
-	dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
+BufferWriteSync::BufferWriteSync(LibcameraApp *app, libcamera::FrameBuffer *fb) : fb_(fb) {
 
-	auto it = app->mapped_buffers_.find(fb_);
-	if (it == app->mapped_buffers_.end())
-	{
-		LOG_ERROR("failed to find buffer in BufferWriteSync");
-		return;
-	}
+  struct dma_buf_sync dma_sync {};
+  dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
 
-	int ret = ::ioctl(fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
-	if (ret)
-	{
-		LOG_ERROR("failed to lock-sync-write dma buf");
-		return;
-	}
+  auto it = app->mapped_buffers_.find (fb_);
+  if (it == app->mapped_buffers_.end()) {
+    LOG_ERROR ("failed to find buffer in BufferWriteSync");
+    return;
+    }
 
-	planes_ = it->second;
-}
+  int ret = ::ioctl(fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+  if (ret) {
+    LOG_ERROR ("failed to lock-sync-write dma buf");
+    return;
+    }
+
+  planes_ = it->second;
+  }
 //}}}
 //{{{
-BufferWriteSync::~BufferWriteSync()
-{
-	struct dma_buf_sync dma_sync {};
-	dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+BufferWriteSync::~BufferWriteSync() {
 
-	int ret = ::ioctl(fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
-	if (ret)
-		LOG_ERROR("failed to unlock-sync-write dma buf");
-}
+  struct dma_buf_sync dma_sync {};
+  dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+
+  int ret = ::ioctl (fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+  if (ret)
+    LOG_ERROR ("failed to unlock-sync-write dma buf");
+  }
 //}}}
 
-//{{{
-const std::vector<libcamera::Span<uint8_t>> &BufferWriteSync::Get() const
-{
-	return planes_;
-}
-//}}}
+const std::vector<libcamera::Span<uint8_t>> &BufferWriteSync::Get() const { return planes_; }
 
 //{{{
-BufferReadSync::BufferReadSync(LibcameraApp *app, libcamera::FrameBuffer *fb)
-{
-	auto it = app->mapped_buffers_.find(fb);
-	if (it == app->mapped_buffers_.end())
-	{
-		LOG_ERROR("failed to find buffer in BufferReadSync");
-		return;
-	}
+BufferReadSync::BufferReadSync (LibcameraApp *app, libcamera::FrameBuffer *fb) {
 
-	// DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ happens when the request completes,
-	// so nothing to do here but cache the planes map.
-	planes_ = it->second;
-}
+  auto it = app->mapped_buffers_.find (fb);
+  if (it == app->mapped_buffers_.end()) {
+    LOG_ERROR("failed to find buffer in BufferReadSync");
+    return;
+    }
+
+  // DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ happens when the request completes,
+  // so nothing to do here but cache the planes map.
+  planes_ = it->second;
+  }
 //}}}
 //{{{
-BufferReadSync::~BufferReadSync()
-{
-	// DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ happens when we resend the buffer
-	// in the next request, so nothing to do here.
-}
+BufferReadSync::~BufferReadSync() {
+  // DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ happens when we resend the buffer
+  // in the next request, so nothing to do here.
+  }
 //}}}
 
-//{{{
-const std::vector<libcamera::Span<uint8_t>> &BufferReadSync::Get() const
-{
-	return planes_;
-}
-//}}}
+const std::vector<libcamera::Span<uint8_t>> &BufferReadSync::Get() const { return planes_; }

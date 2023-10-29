@@ -6,7 +6,6 @@
  * still_video.hpp - video capture program options
  */
 //}}}
-
 #pragma once
 #include <cstdio>
 #include <string>

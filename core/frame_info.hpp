@@ -6,7 +6,7 @@
  * frame_info.hpp - Frame info class for libcamera apps
  */
 //}}}
-//{{{
+//{{{  includes
 #include <array>
 #include <iomanip>
 #include <sstream>
@@ -16,13 +16,12 @@
 #include <libcamera/controls.h>
 //}}}
 
-struct FrameInfo
-{
+struct FrameInfo {
 	//{{{
-	FrameInfo(libcamera::ControlList &ctrls)
+	FrameInfo (libcamera::ControlList &ctrls)
 		: exposure_time(0.0), digital_gain(0.0), colour_gains({ { 0.0f, 0.0f } }), focus(0.0), aelock(false),
-			lens_position(-1.0), af_state(0)
-	{
+			lens_position(-1.0), af_state(0) {
+
 		auto exp = ctrls.get(libcamera::controls::ExposureTime);
 		if (exp)
 			exposure_time = *exp;
@@ -37,9 +36,7 @@ struct FrameInfo
 
 		auto cg = ctrls.get(libcamera::controls::ColourGains);
 		if (cg)
-		{
 			colour_gains[0] = (*cg)[0], colour_gains[1] = (*cg)[1];
-		}
 
 		auto fom = ctrls.get(libcamera::controls::FocusFoM);
 		if (fom)
@@ -58,8 +55,9 @@ struct FrameInfo
 			af_state = *afs;
 	}
 	//}}}
+
 	//{{{
-	std::string ToString(std::string &info_string) const
+	std::string ToString (std::string &info_string) const
 	{
 		std::string parsed(info_string);
 
@@ -131,6 +129,6 @@ struct FrameInfo
 private:
 	// Info text tokens.
 	inline static const std::string tokens[] = { "%frame", "%fps", "%exp", "%ag", "%dg",
-								 "%rg", "%bg",  "%focus", "%aelock",
-								 "%lp", "%afstate" };
+																							 "%rg", "%bg",  "%focus", "%aelock",
+																							 "%lp", "%afstate" };
 };
