@@ -21,7 +21,7 @@ public:
 	LibcameraRaw() : LibcameraEncoder() {}
 protected:
 	// Force the use of "null" encoder.
-	void createEncoder() { encoder_ = std::unique_ptr<Encoder>(new NullEncoder(GetOptions())); }
+	void createEncoder() { encoder_ = std::unique_ptr<Encoder>(new NullEncoder (GetOptions())); }
 	};
 
 //{{{
@@ -49,11 +49,11 @@ static void event_loop (LibcameraRaw& app) {
 			continue;
 			}
 		if (msg.type != LibcameraRaw::MsgType::RequestComplete)
-			throw std::runtime_error("unrecognised message!");
+			throw std::runtime_error ("unrecognised message!");
 		if (count == 0) {
 			libcamera::StreamConfiguration const &cfg = app.RawStream()->configuration();
 			LOG(1, "Raw stream: " << cfg.size.width << "x" << cfg.size.height << " stride " << cfg.stride << " format "
-									<< cfg.pixelFormat.toString());
+														<< cfg.pixelFormat.toString());
 			}
 
 		LOG(2, "Viewfinder frame " << count);
@@ -69,27 +69,24 @@ static void event_loop (LibcameraRaw& app) {
 	}
 //}}}
 //{{{
-int main (int argc, char* argv[])
-{
-	try
-	{
+int main (int argc, char* argv[]) {
+
+	try { 
 		LibcameraRaw app;
 		VideoOptions *options = app.GetOptions();
-		if (options->Parse(argc, argv))
-		{
+		if (options->Parse (argc, argv)) {
 			options->denoise = "cdn_off";
 			options->nopreview = true;
 			if (options->verbose >= 2)
 				options->Print();
-
-			event_loop(app);
+			event_loop (app);
+			}
 		}
-	}
-	catch (std::exception const &e)
-	{
-		LOG_ERROR("ERROR: *** " << e.what() << " ***");
+	catch (std::exception const &e) {
+		LOG_ERROR ("ERROR: *** " << e.what() << " ***");
 		return -1;
-	}
+		}
+
 	return 0;
-}
+	}
 //}}}

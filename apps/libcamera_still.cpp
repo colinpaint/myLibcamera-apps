@@ -45,11 +45,11 @@ static std::string generate_filename (StillOptions const* options) {
 
 	if (options->datetime) {
 		std::time_t raw_time;
-		std::time(&raw_time);
+		std::time (&raw_time);
 		char time_string[32];
-		std::tm *time_info = std::localtime(&raw_time);
-		std::strftime(time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
-		snprintf(filename, sizeof(filename), "%s%s.%s", folder.c_str(), time_string, options->encoding.c_str());
+		std::tm* time_info = std::localtime (&raw_time);
+		std::strftime (time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
+		snprintf (filename, sizeof(filename), "%s%s.%s", folder.c_str(), time_string, options->encoding.c_str());
 		}
 	else if (options->timestamp)
 		snprintf (filename, sizeof(filename), "%s%u.%s", folder.c_str(), (unsigned)time(NULL), options->encoding.c_str());
@@ -67,13 +67,13 @@ static void update_latest_link (std::string const& filename, StillOptions const*
 	// Create a fixed-name link to the most recent output file, if requested.
 	if (!options->latest.empty()) {
 		struct stat buf;
-		if (stat(options->latest.c_str(), &buf) == 0 && unlink(options->latest.c_str()))
-			LOG_ERROR("WARNING: could not delete latest link " << options->latest);
+		if (stat (options->latest.c_str(), &buf) == 0 && unlink (options->latest.c_str()))
+			LOG_ERROR ("WARNING: could not delete latest link " << options->latest);
 		else {
-			if (symlink(filename.c_str(), options->latest.c_str()))
-				LOG_ERROR("WARNING: failed to create latest link " << options->latest);
+			if (symlink (filename.c_str(), options->latest.c_str()))
+				LOG_ERROR ("WARNING: failed to create latest link " << options->latest);
 			else
-				LOG(2, "Link " << options->latest << " created");
+				LOG (2, "Link " << options->latest << " created");
 			}
 		}
 	}
@@ -83,37 +83,37 @@ static void update_latest_link (std::string const& filename, StillOptions const*
 static void save_image (LibcameraStillApp& app, CompletedRequestPtr& payload, Stream* stream, std::string const &filename) {
 
 	StillOptions const* options = app.GetOptions();
-	StreamInfo info = app.GetStreamInfo(stream);
+	StreamInfo info = app.GetStreamInfo (stream);
 
-	BufferReadSync r(&app, payload->buffers[stream]);
-
+	BufferReadSync r (&app, payload->buffers[stream]);
 	const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
-	if (stream == app.RawStream())
-		dng_save(mem, info, payload->metadata, filename, app.CameraModel(), options);
-	else if (options->encoding == "jpg")
-		jpeg_save(mem, info, payload->metadata, filename, app.CameraModel(), options);
-	else if (options->encoding == "png")
-		png_save(mem, info, filename, options);
-	else if (options->encoding == "bmp")
-		bmp_save(mem, info, filename, options);
-	else
-		yuv_save(mem, info, filename, options);
 
-	LOG(2, "Saved image " << info.width << " x " << info.height << " to file " << filename);
+	if (stream == app.RawStream())
+		dng_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
+	else if (options->encoding == "jpg")
+		jpeg_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
+	else if (options->encoding == "png")
+		png_save (mem, info, filename, options);
+	else if (options->encoding == "bmp")
+		bmp_save (mem, info, filename, options);
+	else
+		yuv_save (mem, info, filename, options);
+
+	LOG (2, "Saved image " << info.width << " x " << info.height << " to file " << filename);
 	}
 //}}}
 //{{{
 static void save_images (LibcameraStillApp& app, CompletedRequestPtr& payload) {
 
-	StillOptions *options = app.GetOptions();
-	std::string filename = generate_filename(options);
-	save_image(app, payload, app.StillStream(), filename);
+	StillOptions* options = app.GetOptions();
+	std::string filename = generate_filename (options);
+	save_image (app, payload, app.StillStream(), filename);
 
-	update_latest_link(filename, options);
+	update_latest_link (filename, options);
 
 	if (options->raw) {
-		filename = filename.substr(0, filename.rfind('.')) + ".dng";
-		save_image(app, payload, app.RawStream(), filename);
+		filename = filename.substr (0, filename.rfind ('.')) + ".dng";
+		save_image (app, payload, app.RawStream(), filename);
 		}
 
 	options->framestart++;
@@ -144,7 +144,7 @@ static int signal_received;
 static void default_signal_handler (int signal_number) {
 
 	signal_received = signal_number;
-	LOG(1, "Received signal " << signal_number);
+	LOG (1, "Received signal " << signal_number);
 	}
 //}}}
 //{{{
@@ -154,9 +154,9 @@ static int get_key_or_signal (StillOptions const* options, pollfd p[1]) {
 	if (options->keypress) {
 		poll(p, 1, 0);
 		if (p[0].revents & POLLIN) {
-			char *user_string = nullptr;
+			char* user_string = nullptr;
 			size_t len;
-			[[maybe_unused]] size_t r = getline(&user_string, &len, stdin);
+			[[maybe_unused]] size_t r = getline (&user_string, &len, stdin);
 			key = user_string[0];
 			}
 		}
@@ -179,12 +179,12 @@ static void event_loop (LibcameraStillApp &app) {
 
 	StillOptions const* options = app.GetOptions();
 
-	bool output = !options->output.empty() || 
-								options->datetime || 
-								options->timestamp; 
+	bool output = !options->output.empty() ||
+								options->datetime ||
+								options->timestamp;
 
 	// "signal" mode is much like "keypress" mode
-	bool keypress = options->keypress || options->signal; 
+	bool keypress = options->keypress || options->signal;
 
 	unsigned int still_flags = LibcameraApp::FLAG_STILL_NONE;
 	if (options->encoding == "rgb" || options->encoding == "png")
@@ -242,18 +242,20 @@ static void event_loop (LibcameraStillApp &app) {
 		else if (msg.type != LibcameraApp::MsgType::RequestComplete)
 			throw std::runtime_error ("unrecognised message!");
 
-		CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
+		CompletedRequestPtr& completed_request = std::get<CompletedRequestPtr>(msg.payload);
 		auto now = std::chrono::high_resolution_clock::now();
+
 		int key = get_key_or_signal (options, p);
 		if (key == 'x' || key == 'X')
 			return;
 		if (key == '\n')
 			keypressed = true;
 
-		// In viewfinder mode, run until the timeout or keypress. When that happens,
-		// if the "--autofocus-on-capture" option was set, trigger an AF scan and wait
-		// for it to complete. Then switch to capture mode if an output was requested.
 		if (app.ViewfinderStream() && !want_capture) {
+			//{{{  viewfinder mode
+			// run until the timeout or keypress. When that happens,
+			// if the "--autofocus-on-capture" option was set, trigger an AF scan and wait
+			// for it to complete. Then switch to capture mode if an output was requested.
 			LOG (2, "Viewfinder frame " << count);
 			timelapse_frames++;
 
@@ -312,17 +314,17 @@ static void event_loop (LibcameraStillApp &app) {
 			else
 				app.ShowPreview (completed_request, app.ViewfinderStream());
 			}
-
-		// In still capture mode, save a jpeg. Go back to viewfinder if in timelapse mode, otherwise quit.
+			//}}}
 		else if (app.StillStream() && want_capture) {
+			//{{{  still capture mode, save a jpeg. Go back to viewfinder if in timelapse mode, otherwise quit.
 			want_capture = false;
 			if (!options->zsl)
 				app.StopCamera();
-			LOG(1, "Still capture image received");
-			save_images(app, completed_request);
+			LOG (1, "Still capture image received");
+			save_images (app, completed_request);
 
 			if (!options->metadata.empty())
-				save_metadata(options, completed_request->metadata);
+				save_metadata (options, completed_request->metadata);
 
 			timelapse_frames = 0;
 			if (!options->immediate && (options->timelapse || options->signal || options->keypress)) {
@@ -333,8 +335,8 @@ static void event_loop (LibcameraStillApp &app) {
 
 				if (options->af_on_capture && options->afMode_index == -1) {
 					libcamera::ControlList cl;
-					cl.set(libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
-					cl.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
+					cl.set (libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
+					cl.set (libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
 					app.SetControls(cl);
 					}
 
@@ -345,6 +347,7 @@ static void event_loop (LibcameraStillApp &app) {
 			else
 				return;
 			}
+			//}}}
 		}
 	}
 //}}}
