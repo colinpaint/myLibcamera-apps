@@ -23,33 +23,34 @@
 
 #include "image/image.hpp"
 
-using namespace std::chrono_literals;
-using namespace std::placeholders;
+using namespace std;
+using namespace chrono_literals;
+using namespace placeholders;
 using libcamera::Stream;
 //}}}
 
 class LibcameraStillApp : public LibcameraApp {
 public:
-  LibcameraStillApp() : LibcameraApp(std::make_unique<StillOptions>()) {}
+  LibcameraStillApp() : LibcameraApp (make_unique<StillOptions>()) {}
   StillOptions* GetOptions() const { return static_cast<StillOptions*>(options_.get()); }
   };
 
 namespace {
   //{{{
-  std::string generate_filename (StillOptions const* options) {
+  string generate_filename (StillOptions const* options) {
 
     char filename[128];
-    std::string folder = options->output; // sometimes "output" is used as a folder name
+    string folder = options->output; // sometimes "output" is used as a folder name
 
     if (!folder.empty() && folder.back() != '/')
       folder += "/";
 
     if (options->datetime) {
-      std::time_t raw_time;
-      std::time (&raw_time);
+      time_t raw_time;
+      time (&raw_time);
       char time_string[32];
-      std::tm* time_info = std::localtime (&raw_time);
-      std::strftime (time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
+      tm* time_info = localtime (&raw_time);
+      strftime (time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
       snprintf (filename, sizeof(filename), "%s%s.%s", folder.c_str(), time_string, options->encoding.c_str());
       }
     else if (options->timestamp)
@@ -59,11 +60,11 @@ namespace {
 
     filename[sizeof(filename) - 1] = 0;
 
-    return std::string (filename);
+    return string (filename);
     }
   //}}}
   //{{{
-  void update_latest_link (std::string const& filename, StillOptions const* options) {
+  void update_latest_link (string const& filename, StillOptions const* options) {
 
     // Create a fixed-name link to the most recent output file, if requested.
     if (!options->latest.empty()) {
@@ -81,13 +82,13 @@ namespace {
   //}}}
 
   //{{{
-  void save_image (LibcameraStillApp& app, CompletedRequestPtr& payload, Stream* stream, std::string const &filename) {
+  void save_image (LibcameraStillApp& app, CompletedRequestPtr& payload, Stream* stream, string const &filename) {
 
     StillOptions const* options = app.GetOptions();
     StreamInfo info = app.GetStreamInfo (stream);
 
     BufferReadSync r (&app, payload->buffers[stream]);
-    const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
+    const vector<libcamera::Span<uint8_t>> mem = r.Get();
 
     if (stream == app.RawStream())
       dng_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
@@ -107,7 +108,7 @@ namespace {
   void save_images (LibcameraStillApp& app, CompletedRequestPtr& payload) {
 
     StillOptions* options = app.GetOptions();
-    std::string filename = generate_filename (options);
+    string filename = generate_filename (options);
     save_image (app, payload, app.StillStream(), filename);
 
     update_latest_link (filename, options);
@@ -125,12 +126,12 @@ namespace {
   //{{{
   void save_metadata (StillOptions const* options, libcamera::ControlList& metadata) {
 
-    const std::string& filename = options->metadata;
+    const string& filename = options->metadata;
 
-    std::streambuf* buf = std::cout.rdbuf();
+    streambuf* buf = cout.rdbuf();
     if (filename.compare ("-")) {
-      std::ofstream of;
-      of.open (filename, std::ios::out);
+      ofstream of;
+      of.open (filename, ios::out);
       buf = of.rdbuf();
       }
 
@@ -211,7 +212,7 @@ namespace {
           return;
         else if (key == '\n')
           break;
-        std::this_thread::sleep_for (10ms);
+        this_thread::sleep_for (10ms);
         }
       }
     else if (options->zsl)
@@ -221,7 +222,7 @@ namespace {
 
     app.StartCamera();
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = chrono::high_resolution_clock::now();
     auto timelapse_time = start_time;
     int timelapse_frames = 0;
     constexpr int TIMELAPSE_MIN_FRAMES = 6; // at least this many preview frames between captures
@@ -242,10 +243,10 @@ namespace {
       if (msg.type == LibcameraApp::MsgType::Quit)
         return;
       else if (msg.type != LibcameraApp::MsgType::RequestComplete)
-        throw std::runtime_error ("unrecognised message!");
+        throw runtime_error ("unrecognised message!");
 
-      CompletedRequestPtr& completed_request = std::get<CompletedRequestPtr>(msg.payload);
-      auto now = std::chrono::high_resolution_clock::now();
+      CompletedRequestPtr& completed_request = get<CompletedRequestPtr>(msg.payload);
+      auto now = chrono::high_resolution_clock::now();
 
       int key = getkeyOrSignal (options, p);
       if (key == 'x' || key == 'X')
@@ -299,7 +300,7 @@ namespace {
             return;
           keypressed = false;
           af_wait_state = AF_WAIT_NONE;
-          timelapse_time = std::chrono::high_resolution_clock::now();
+          timelapse_time = chrono::high_resolution_clock::now();
           if (!options->zsl) {
             app.StopCamera();
             app.Teardown();
@@ -370,7 +371,7 @@ int main (int argc, char* argv[]) {
       event_loop (app);
       }
     }
-  catch (std::exception const &e) {
+  catch (exception const &e) {
     LOG_ERROR ("ERROR: *** " << e.what() << " ***");
     return -1;
     }
