@@ -298,6 +298,7 @@ namespace {
         if (want_capture) {
           if (!output)
             return;
+
           keypressed = false;
           af_wait_state = AF_WAIT_NONE;
           timelapse_time = chrono::high_resolution_clock::now();
@@ -321,25 +322,26 @@ namespace {
         }
         //}}}
       else if (app.StillStream() && want_capture) {
-        //{{{  still capture mode, save a jpeg. Go back to viewfinder if in timelapse mode, otherwise quit.
+        //{{{  still capture mode, save jpeg, back to viewfinder if in timelapse mode, otherwise quit.
         want_capture = false;
+
         if (!options->zsl)
           app.StopCamera();
         LOG (1, "Still capture image received");
-        save_images (app, completed_request);
 
+        save_images (app, completed_request);
         if (!options->metadata.empty())
           save_metadata (options, completed_request->metadata);
 
         timelapse_frames = 0;
-        if (!options->immediate && 
+        if (!options->immediate &&
             (options->timelapse || options->signal || options->keypress)) {
           if (!options->zsl) {
             app.Teardown();
             app.ConfigureViewfinder();
             }
 
-          if (options->af_on_capture && options->afMode_index == -1) {
+          if (options->af_on_capture && (options->afMode_index == -1)) {
             libcamera::ControlList cl;
             cl.set (libcamera::controls::AfMode, libcamera::controls::AfModeAuto);
             cl.set (libcamera::controls::AfTrigger, libcamera::controls::AfTriggerCancel);
@@ -348,6 +350,7 @@ namespace {
 
           if (!options->zsl)
             app.StartCamera();
+
           af_wait_state = AF_WAIT_NONE;
           }
         else
@@ -364,7 +367,7 @@ int main (int argc, char* argv[]) {
 
   try {
     LibcameraStillApp app;
-    StillOptions *options = app.GetOptions();
+    StillOptions* options = app.GetOptions();
     if (options->Parse (argc, argv)) {
       if (options->verbose >= 2)
         options->Print();
