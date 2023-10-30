@@ -30,7 +30,7 @@ namespace {
     }
   //}}}
   //{{{
-  int get_key_or_signal (VideoOptions const *options, pollfd p[1]) {
+  int get_key_or_signal (VideoOptions const* options, pollfd p[1]) {
 
     int key = 0;
 
@@ -68,7 +68,7 @@ namespace {
     }
   //}}}
   //{{{
-  void event_loop (LibcameraEncoder& app) {
+  void eventLoop (LibcameraEncoder& app) {
 
     VideoOptions const* options = app.GetOptions();
     unique_ptr<Output> output = unique_ptr<Output>(Output::Create( options));
@@ -134,11 +134,13 @@ int main (int argc, char* argv[]) {
 
   try {
     LibcameraEncoder app;
+
     VideoOptions* options = app.GetOptions();
     if (options->Parse (argc, argv)) {
       if (options->verbose >= 2)
         options->Print();
-      event_loop(app);
+
+      eventLoop (app);
       }
     }
   catch (exception const &e) {
