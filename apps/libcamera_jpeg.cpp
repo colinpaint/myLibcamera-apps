@@ -24,62 +24,61 @@ public:
   StillOptions *GetOptions() const { return static_cast<StillOptions *>(options_.get()); }
   };
 
-//{{{
-static void event_loop (LibcameraJpegApp& app) {
+namespace {
+  //{{{
+  void event_loop (LibcameraJpegApp& app) {
 
-  StillOptions const* options = app.GetOptions();
+    StillOptions const* options = app.GetOptions();
 
-  app.OpenCamera();
-  app.ConfigureViewfinder();
-  app.StartCamera();
-  auto start_time = std::chrono::high_resolution_clock::now();
+    app.OpenCamera();
+    app.ConfigureViewfinder();
+    app.StartCamera();
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-  for (;;) {
-    LibcameraApp::Msg msg = app.Wait();
-    if (msg.type == LibcameraApp::MsgType::Timeout) {
-      LOG_ERROR ("ERROR: Device timeout detected, attempting a restart!!!");
-      app.StopCamera();
-      app.StartCamera();
-      continue;
-      }
-    if (msg.type == LibcameraApp::MsgType::Quit)
-      return;
-    else if (msg.type != LibcameraApp::MsgType::RequestComplete)
-      throw std::runtime_error ("unrecognised message!");
-
-    if (app.ViewfinderStream()) {
-      //{{{  viewfinder mode, simply run until the timeout. When that happens, switch to capture mode.
-      auto now = std::chrono::high_resolution_clock::now();
-      if (options->timeout && (now - start_time) > options->timeout.value) {
+    for (;;) {
+      LibcameraApp::Msg msg = app.Wait();
+      if (msg.type == LibcameraApp::MsgType::Timeout) {
+        LOG_ERROR ("ERROR: Device timeout detected, attempting a restart!!!");
         app.StopCamera();
-        app.Teardown();
-        app.ConfigureStill();
         app.StartCamera();
+        continue;
         }
-      else {
-        CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
-        app.ShowPreview (completed_request, app.ViewfinderStream());
-        }
-      }
-      //}}}
-    else if (app.StillStream()) {
-      //{{{  still capture mode, save a jpeg and quit.
-      app.StopCamera();
-      LOG (1, "Still capture image received");
+      if (msg.type == LibcameraApp::MsgType::Quit)
+        return;
+      else if (msg.type != LibcameraApp::MsgType::RequestComplete)
+        throw std::runtime_error ("unrecognised message!");
 
-      Stream* stream = app.StillStream();
-      StreamInfo info = app.GetStreamInfo(stream);
-      CompletedRequestPtr &payload = std::get<CompletedRequestPtr>(msg.payload);
-      BufferReadSync r(&app, payload->buffers[stream]);
-      const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
-      jpeg_save (mem, info, payload->metadata, options->output, app.CameraModel(), options);
-      return;
+      if (app.ViewfinderStream()) {
+        // viewfinder mode, run until timeout, switch to capture mode.
+        auto now = std::chrono::high_resolution_clock::now();
+        if (options->timeout && (now - start_time) > options->timeout.value) {
+          app.StopCamera();
+          app.Teardown();
+          app.ConfigureStill();
+          app.StartCamera();
+          }
+        else {
+          CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
+          app.ShowPreview (completed_request, app.ViewfinderStream());
+          }
+        }
+      else if (app.StillStream()) {
+        // still capture mode, save jpeg, quit.
+        app.StopCamera();
+        LOG (1, "Still capture image received");
+
+        Stream* stream = app.StillStream();
+        StreamInfo info = app.GetStreamInfo (stream);
+        CompletedRequestPtr& payload = std::get<CompletedRequestPtr>(msg.payload);
+        BufferReadSync r(&app, payload->buffers[stream]);
+        const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
+        jpeg_save (mem, info, payload->metadata, options->output, app.CameraModel(), options);
+        return;
+        }
       }
-      //}}}
     }
+  //}}}
   }
-//}}}
-
 //{{{
 int main (int argc, char* argv[]) {
 
