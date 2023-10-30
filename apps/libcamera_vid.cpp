@@ -20,7 +20,7 @@ using namespace std;
 using namespace placeholders;
 //}}}
 
-namepsace {
+namespace {
   int signal_received;
   //{{{
   void default_signal_handler (int signal_number) {
@@ -111,8 +111,8 @@ namepsace {
                      options->timeout &&
                      ((now - start_time) > options->timeout.value);
       bool frameout = options->frames && count >= options->frames;
-      if (timeout || frameout || 
-          key == 'x' || key == 'X'|| 
+      if (timeout || frameout ||
+          key == 'x' || key == 'X'||
           key == 'q' || key == 'Q') {
         if (timeout)
           LOG (1, "Halting: reached timeout of " << options->timeout.get<chrono::milliseconds>() << " milliseconds.");
