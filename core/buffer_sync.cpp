@@ -17,7 +17,7 @@
 //}}}
 
 //{{{
-BufferWriteSync::BufferWriteSync(LibcameraApp *app, libcamera::FrameBuffer *fb) : fb_(fb) {
+BufferWriteSync::BufferWriteSync (LibcameraApp *app, libcamera::FrameBuffer *fb) : fb_(fb) {
 
   struct dma_buf_sync dma_sync {};
   dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
@@ -28,7 +28,7 @@ BufferWriteSync::BufferWriteSync(LibcameraApp *app, libcamera::FrameBuffer *fb) 
     return;
     }
 
-  int ret = ::ioctl(fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+  int ret = ::ioctl (fb_->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
   if (ret) {
     LOG_ERROR ("failed to lock-sync-write dma buf");
     return;
@@ -56,7 +56,7 @@ BufferReadSync::BufferReadSync (LibcameraApp *app, libcamera::FrameBuffer *fb) {
 
   auto it = app->mapped_buffers_.find (fb);
   if (it == app->mapped_buffers_.end()) {
-    LOG_ERROR("failed to find buffer in BufferReadSync");
+    LOG_ERROR ("failed to find buffer in BufferReadSync");
     return;
     }
 

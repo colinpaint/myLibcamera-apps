@@ -7,6 +7,7 @@
  */
 //}}}
 #pragma once
+//{{{  includes
 #include <chrono>
 #include <condition_variable>
 #include <future>
@@ -14,6 +15,7 @@
 #include <queue>
 #include "core/completed_request.hpp"
 #include "core/logging.hpp"
+//}}}
 
 namespace libcamera {
   struct StreamConfiguration;
@@ -29,32 +31,34 @@ typedef std::unique_ptr<PostProcessingStage> StagePtr;
 
 class PostProcessor {
 public:
-  PostProcessor(LibcameraApp *app);
+  PostProcessor (LibcameraApp *app);
   ~PostProcessor();
 
-  void Read(std::string const &filename);
+  void Read (std::string const &filename);
 
-  void SetCallback(PostProcessorCallback callback);
+  void SetCallback (PostProcessorCallback callback);
 
-  void AdjustConfig(std::string const &use_case, StreamConfiguration *config);
+  void AdjustConfig (std::string const &use_case, StreamConfiguration *config);
   void Configure();
 
   void Start();
-  void Process(CompletedRequestPtr &request);
+  void Process (CompletedRequestPtr &request);
   void Stop();
   void Teardown();
 
 private:
-  PostProcessingStage *createPostProcessingStage(char const *name);
+  PostProcessingStage* createPostProcessingStage (char const *name);
 
-  LibcameraApp *app_;
+  LibcameraApp* app_;
   std::vector<StagePtr> stages_;
+
   void outputThread();
 
   std::queue<CompletedRequestPtr> requests_;
   std::queue<std::future<bool>> futures_;
   std::thread output_thread_;
   bool quit_;
+
   PostProcessorCallback callback_;
   std::mutex mutex_;
   std::condition_variable cv_;

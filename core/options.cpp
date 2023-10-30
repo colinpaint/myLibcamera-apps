@@ -58,19 +58,19 @@ Mode::Mode (std::string const &mode_string) : Mode() {
 
   if (!mode_string.empty()) {
     char p;
-    int n = sscanf(mode_string.c_str(), "%u:%u:%u:%c", &width, &height, &bit_depth, &p);
+    int n = sscanf (mode_string.c_str(), "%u:%u:%u:%c", &width, &height, &bit_depth, &p);
     if (n < 2)
-      throw std::runtime_error("Invalid mode");
+      throw std::runtime_error ("Invalid mode");
     else if (n == 2)
       bit_depth = 12, packed = true;
     else if (n == 3)
       packed = true;
-    else if (toupper(p) == 'P')
+    else if (toupper (p) == 'P')
       packed = true;
-    else if (toupper(p) == 'U')
+    else if (toupper (p) == 'U')
       packed = false;
     else
-      throw std::runtime_error("Packing indicator should be P or U");
+      throw std::runtime_error ("Packing indicator should be P or U");
     }
   }
 //}}}
@@ -106,7 +106,7 @@ void Mode::update (const libcamera::Size &size, const std::optional<float> &fps)
 //}}}
 
 //{{{
-static int xioctl (int fd, unsigned long ctl, void *arg) {
+static int xioctl (int fd, unsigned long ctl, void* arg) {
 
   int ret, num_tries = 10;
   do {
@@ -127,17 +127,17 @@ static bool set_subdev_hdr_ctrl (int en) {
   for (int i = 0; i < 8; i++) {
     std::string dev("/dev/v4l-subdev");
     dev += (char)('0' + i);
-    int fd = open(dev.c_str(), O_RDWR, 0);
+    int fd = open (dev.c_str(), O_RDWR, 0);
     if (fd < 0)
       continue;
 
     v4l2_control ctrl { V4L2_CID_WIDE_DYNAMIC_RANGE, en };
     if (!xioctl (fd, VIDIOC_G_CTRL, &ctrl) && ctrl.value != en) {
       ctrl.value = en;
-      if (!xioctl(fd, VIDIOC_S_CTRL, &ctrl))
+      if (!xioctl (fd, VIDIOC_S_CTRL, &ctrl))
         changed = true;
       }
-    close(fd);
+    close (fd);
     }
 
   return changed;
@@ -145,7 +145,7 @@ static bool set_subdev_hdr_ctrl (int en) {
 //}}}
 
 //{{{
-bool Options::Parse (int argc, char *argv[]) {
+bool Options::Parse (int argc, char* argv[]) {
 
   using namespace boost::program_options;
   using namespace libcamera;
@@ -363,7 +363,8 @@ bool Options::Parse (int argc, char *argv[]) {
   if (tuning_file != "-")
     setenv("LIBCAMERA_RPI_TUNING_FILE", tuning_file.c_str(), 1);
 
-  if (sscanf(preview.c_str(), "%u,%u,%u,%u", &preview_x, &preview_y, &preview_width, &preview_height) != 4)
+  if (sscanf (preview.c_str(), "%u,%u,%u,%u", 
+                               &preview_x, &preview_y, &preview_width, &preview_height) != 4)
     preview_x = preview_y = preview_width = preview_height = 0; // use default window
 
   transform = Transform::Identity;
@@ -380,12 +381,13 @@ bool Options::Parse (int argc, char *argv[]) {
   if (!!(transform & Transform::Transpose))
     throw std::runtime_error ("transforms requiring transpose not supported");
 
-  if (sscanf(roi.c_str(), "%f,%f,%f,%f", &roi_x, &roi_y, &roi_width, &roi_height) != 4)
+  if (sscanf (roi.c_str(), "%f,%f,%f,%f", &roi_x, &roi_y, &roi_width, &roi_height) != 4)
     roi_x = roi_y = roi_width = roi_height = 0; // don't set digital zoom
 
   if (sscanf (afWindow.c_str(), "%f,%f,%f,%f", &afWindow_x, &afWindow_y, &afWindow_width, &afWindow_height) != 4)
     afWindow_x = afWindow_y = afWindow_width = afWindow_height = 0; // don't set auto focus windows
 
+  //{{{  metering_index
   std::map<std::string, int> metering_table =
     { { "centre", libcamera::controls::MeteringCentreWeighted },
       { "spot", libcamera::controls::MeteringSpot },
@@ -395,7 +397,8 @@ bool Options::Parse (int argc, char *argv[]) {
   if (metering_table.count(metering) == 0)
     throw std::runtime_error("Invalid metering mode: " + metering);
   metering_index = metering_table[metering];
-
+  //}}}
+  //{{{  exposure_index
   std::map<std::string, int> exposure_table =
     { { "normal", libcamera::controls::ExposureNormal },
       { "sport", libcamera::controls::ExposureShort },
@@ -405,7 +408,8 @@ bool Options::Parse (int argc, char *argv[]) {
   if (exposure_table.count(exposure) == 0)
     throw std::runtime_error("Invalid exposure mode:" + exposure);
   exposure_index = exposure_table[exposure];
-
+  //}}}
+  //{{{  afMode_index
   std::map<std::string, int> afMode_table =
     { { "default", -1 },
       { "manual", libcamera::controls::AfModeManual },
@@ -414,7 +418,8 @@ bool Options::Parse (int argc, char *argv[]) {
   if (afMode_table.count(afMode) == 0)
     throw std::runtime_error("Invalid AfMode:" + afMode);
   afMode_index = afMode_table[afMode];
-
+  //}}}
+  //{{{  afRange_index
   std::map<std::string, int> afRange_table =
     { { "normal", libcamera::controls::AfRangeNormal },
       { "macro", libcamera::controls::AfRangeMacro },
@@ -422,14 +427,16 @@ bool Options::Parse (int argc, char *argv[]) {
   if (afRange_table.count(afRange) == 0)
     throw std::runtime_error("Invalid AfRange mode:" + exposure);
   afRange_index = afRange_table[afRange];
-
+  //}}}
+  //{{{  afSpeed_index
   std::map<std::string, int> afSpeed_table =
     { { "normal", libcamera::controls::AfSpeedNormal },
         { "fast", libcamera::controls::AfSpeedFast } };
   if (afSpeed_table.count(afSpeed) == 0)
     throw std::runtime_error("Invalid afSpeed mode:" + afSpeed);
   afSpeed_index = afSpeed_table[afSpeed];
-
+  //}}}
+  //{{{  awb_index
   std::map<std::string, int> awb_table =
     { { "auto", libcamera::controls::AwbAuto },
       { "normal", libcamera::controls::AwbAuto },
@@ -443,10 +450,11 @@ bool Options::Parse (int argc, char *argv[]) {
   if (awb_table.count(awb) == 0)
     throw std::runtime_error("Invalid AWB mode: " + awb);
   awb_index = awb_table[awb];
-
+  //}}}
+  //{{{  awbGains
   if (sscanf (awbgains.c_str(), "%f,%f", &awb_gain_r, &awb_gain_b) != 2)
-    throw std::runtime_error("Invalid AWB gains");
-
+    throw std::runtime_error ("Invalid AWB gains");
+  //}}}
   brightness = std::clamp (brightness, -1.0f, 1.0f);
   contrast = std::clamp (contrast, 0.0f, 15.99f); // limits are arbitrary..
   saturation = std::clamp (saturation, 0.0f, 15.99f); // limits are arbitrary..
@@ -469,6 +477,7 @@ bool Options::Parse (int argc, char *argv[]) {
 void Options::Print() const {
 
   std::cerr << "Options:" << std::endl;
+
   std::cerr << "    verbose: " << verbose << std::endl;
   if (!config_file.empty())
     std::cerr << "    config file: " << config_file << std::endl;

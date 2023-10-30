@@ -21,16 +21,14 @@
 
 namespace {
   //{{{
-  /*
-   * /dev/dma-heap/vidbuf_cached sym links to either the system heap (Pi 5) or the
-   * CMA allocator (Pi 4 and below). If missing, fallback to the CMA allocator.
-   */
+  // /dev/dma-heap/vidbuf_cached sym links to either the system heap (Pi 5) or the
+  // CMA allocator (Pi 4 and below). If missing, fallback to the CMA allocator.
   const std::vector<const char*> heapNames {
     "/dev/dma_heap/vidbuf_cached",
     "/dev/dma_heap/linux,cma",
     };
   //}}}
-  } 
+  }
 
 //{{{
 DmaHeap::DmaHeap() {
@@ -67,7 +65,7 @@ libcamera::UniqueFD DmaHeap::alloc (const char *name, std::size_t size) const {
 
   ret = ::ioctl (dmaHeapHandle_.get(), DMA_HEAP_IOCTL_ALLOC, &alloc);
   if (ret < 0) {
-    LOG_ERROR("dmaHeap allocation failure for " << name);
+    LOG_ERROR ("dmaHeap allocation failure for " << name);
     return {};
     }
 
