@@ -34,109 +34,110 @@ public:
   StillOptions* GetOptions() const { return static_cast<StillOptions*>(options_.get()); }
   };
 
-//{{{
-static std::string generate_filename (StillOptions const* options) {
+namespace {
+  //{{{
+  std::string generate_filename (StillOptions const* options) {
 
-  char filename[128];
-  std::string folder = options->output; // sometimes "output" is used as a folder name
+    char filename[128];
+    std::string folder = options->output; // sometimes "output" is used as a folder name
 
-  if (!folder.empty() && folder.back() != '/')
-    folder += "/";
+    if (!folder.empty() && folder.back() != '/')
+      folder += "/";
 
-  if (options->datetime) {
-    std::time_t raw_time;
-    std::time (&raw_time);
-    char time_string[32];
-    std::tm* time_info = std::localtime (&raw_time);
-    std::strftime (time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
-    snprintf (filename, sizeof(filename), "%s%s.%s", folder.c_str(), time_string, options->encoding.c_str());
+    if (options->datetime) {
+      std::time_t raw_time;
+      std::time (&raw_time);
+      char time_string[32];
+      std::tm* time_info = std::localtime (&raw_time);
+      std::strftime (time_string, sizeof(time_string), "%m%d%H%M%S", time_info);
+      snprintf (filename, sizeof(filename), "%s%s.%s", folder.c_str(), time_string, options->encoding.c_str());
+      }
+    else if (options->timestamp)
+      snprintf (filename, sizeof(filename), "%s%u.%s", folder.c_str(), (unsigned)time(NULL), options->encoding.c_str());
+    else
+      snprintf (filename, sizeof(filename), options->output.c_str(), options->framestart);
+
+    filename[sizeof(filename) - 1] = 0;
+
+    return std::string (filename);
     }
-  else if (options->timestamp)
-    snprintf (filename, sizeof(filename), "%s%u.%s", folder.c_str(), (unsigned)time(NULL), options->encoding.c_str());
-  else
-    snprintf(filename, sizeof(filename), options->output.c_str(), options->framestart);
+  //}}}
+  //{{{
+  void update_latest_link (std::string const& filename, StillOptions const* options) {
 
-  filename[sizeof(filename) - 1] = 0;
-
-  return std::string (filename);
-  }
-//}}}
-//{{{
-static void update_latest_link (std::string const& filename, StillOptions const* options) {
-
-  // Create a fixed-name link to the most recent output file, if requested.
-  if (!options->latest.empty()) {
-    struct stat buf;
-    if (stat (options->latest.c_str(), &buf) == 0 && unlink (options->latest.c_str()))
-      LOG_ERROR ("WARNING: could not delete latest link " << options->latest);
-    else {
-      if (symlink (filename.c_str(), options->latest.c_str()))
-        LOG_ERROR ("WARNING: failed to create latest link " << options->latest);
-      else
-        LOG (2, "Link " << options->latest << " created");
+    // Create a fixed-name link to the most recent output file, if requested.
+    if (!options->latest.empty()) {
+      struct stat buf;
+      if (stat (options->latest.c_str(), &buf) == 0 && unlink (options->latest.c_str()))
+        LOG_ERROR ("WARNING: could not delete latest link " << options->latest);
+      else {
+        if (symlink (filename.c_str(), options->latest.c_str()))
+          LOG_ERROR ("WARNING: failed to create latest link " << options->latest);
+        else
+          LOG (2, "Link " << options->latest << " created");
+        }
       }
     }
-  }
-//}}}
+  //}}}
 
-//{{{
-static void save_image (LibcameraStillApp& app, CompletedRequestPtr& payload, Stream* stream, std::string const &filename) {
+  //{{{
+  void save_image (LibcameraStillApp& app, CompletedRequestPtr& payload, Stream* stream, std::string const &filename) {
 
-  StillOptions const* options = app.GetOptions();
-  StreamInfo info = app.GetStreamInfo (stream);
+    StillOptions const* options = app.GetOptions();
+    StreamInfo info = app.GetStreamInfo (stream);
 
-  BufferReadSync r (&app, payload->buffers[stream]);
-  const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
+    BufferReadSync r (&app, payload->buffers[stream]);
+    const std::vector<libcamera::Span<uint8_t>> mem = r.Get();
 
-  if (stream == app.RawStream())
-    dng_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
-  else if (options->encoding == "jpg")
-    jpeg_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
-  else if (options->encoding == "png")
-    png_save (mem, info, filename, options);
-  else if (options->encoding == "bmp")
-    bmp_save (mem, info, filename, options);
-  else
-    yuv_save (mem, info, filename, options);
+    if (stream == app.RawStream())
+      dng_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
+    else if (options->encoding == "jpg")
+      jpeg_save (mem, info, payload->metadata, filename, app.CameraModel(), options);
+    else if (options->encoding == "png")
+      png_save (mem, info, filename, options);
+    else if (options->encoding == "bmp")
+      bmp_save (mem, info, filename, options);
+    else
+      yuv_save (mem, info, filename, options);
 
-  LOG (2, "Saved image " << info.width << " x " << info.height << " to file " << filename);
-  }
-//}}}
-//{{{
-static void save_images (LibcameraStillApp& app, CompletedRequestPtr& payload) {
-
-  StillOptions* options = app.GetOptions();
-  std::string filename = generate_filename (options);
-  save_image (app, payload, app.StillStream(), filename);
-
-  update_latest_link (filename, options);
-
-  if (options->raw) {
-    filename = filename.substr (0, filename.rfind ('.')) + ".dng";
-    save_image (app, payload, app.RawStream(), filename);
+    LOG (2, "Saved image " << info.width << " x " << info.height << " to file " << filename);
     }
+  //}}}
+  //{{{
+  void save_images (LibcameraStillApp& app, CompletedRequestPtr& payload) {
 
-  options->framestart++;
-  if (options->wrap)
-    options->framestart %= options->wrap;
-  }
-//}}}
-//{{{
-static void save_metadata (StillOptions const* options, libcamera::ControlList& metadata) {
+    StillOptions* options = app.GetOptions();
+    std::string filename = generate_filename (options);
+    save_image (app, payload, app.StillStream(), filename);
 
-  std::streambuf* buf = std::cout.rdbuf();
-  std::ofstream of;
+    update_latest_link (filename, options);
 
-  const std::string& filename = options->metadata;
+    if (options->raw) {
+      filename = filename.substr (0, filename.rfind ('.')) + ".dng";
+      save_image (app, payload, app.RawStream(), filename);
+      }
 
-  if (filename.compare ("-")) {
-    of.open (filename, std::ios::out);
-    buf = of.rdbuf();
+    options->framestart++;
+    if (options->wrap)
+      options->framestart %= options->wrap;
     }
+  //}}}
+  //{{{
+  void save_metadata (StillOptions const* options, libcamera::ControlList& metadata) {
 
-  write_metadata (buf, options->metadata_format, metadata, true);
+    const std::string& filename = options->metadata;
+
+    std::streambuf* buf = std::cout.rdbuf();
+    if (filename.compare ("-")) {
+      std::ofstream of;
+      of.open (filename, std::ios::out);
+      buf = of.rdbuf();
+      }
+
+    write_metadata (buf, options->metadata_format, metadata, true);
+    }
+  //}}}
   }
-//}}}
 
 // Some keypress/signal handling.
 static int signal_received;
