@@ -149,9 +149,10 @@ static void default_signal_handler (int signal_number) {
   }
 //}}}
 //{{{
-static int get_key_or_signal (StillOptions const* options, pollfd p[1]) {
+static int getkeyOrSignal (StillOptions const* options, pollfd p[1]) {
 
   int key = 0;
+
   if (options->keypress) {
     poll(p, 1, 0);
     if (p[0].revents & POLLIN) {
@@ -159,6 +160,7 @@ static int get_key_or_signal (StillOptions const* options, pollfd p[1]) {
       size_t len;
       [[maybe_unused]] size_t r = getline (&user_string, &len, stdin);
       key = user_string[0];
+      LOG (1, "key pressed " << key);
       }
     }
 
@@ -205,8 +207,10 @@ static void event_loop (LibcameraStillApp &app) {
   if (options->immediate) {
     app.ConfigureStill (still_flags);
     while (keypress) {
-      int key = get_key_or_signal(options, p);
+      int key = getkeyOrSignal (options, p);
       if (key == 'x' || key == 'X')
+        return;
+      else if (key == 'q' || key == 'Q')
         return;
       else if (key == '\n')
         break;
@@ -246,8 +250,10 @@ static void event_loop (LibcameraStillApp &app) {
     CompletedRequestPtr& completed_request = std::get<CompletedRequestPtr>(msg.payload);
     auto now = std::chrono::high_resolution_clock::now();
 
-    int key = get_key_or_signal (options, p);
+    int key = getkeyOrSignal (options, p);
     if (key == 'x' || key == 'X')
+      return;
+    if (key == 'q' || key == 'Q')
       return;
     if (key == '\n')
       keypressed = true;
