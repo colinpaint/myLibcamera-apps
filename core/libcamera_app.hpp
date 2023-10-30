@@ -47,6 +47,7 @@ namespace properties = libcamera::properties;
 
 class LibcameraApp {
 public:
+  //{{{  using
   using Stream = libcamera::Stream;
   using FrameBuffer = libcamera::FrameBuffer;
   using ControlList = libcamera::ControlList;
@@ -61,8 +62,8 @@ public:
   using BufferMap = Request::BufferMap;
   using Size = libcamera::Size;
   using Rectangle = libcamera::Rectangle;
+  //}}}
   typedef std::variant<CompletedRequestPtr> MsgPayload;
-
   //{{{
   enum class MsgType
   {
@@ -126,8 +127,7 @@ public:
     //}}}
   };
   //}}}
-
-  // Some flags that can be used to give hints to the camera configuration.
+  //{{{  constexpr flags to give hints to the camera configuration.
   static constexpr unsigned int FLAG_STILL_NONE = 0;
   static constexpr unsigned int FLAG_STILL_BGR = 1; // supply BGR images, not YUV
   static constexpr unsigned int FLAG_STILL_RGB = 2; // supply RGB images, not YUV
@@ -139,6 +139,7 @@ public:
   static constexpr unsigned int FLAG_VIDEO_NONE = 0;
   static constexpr unsigned int FLAG_VIDEO_RAW = 1; // request raw image stream
   static constexpr unsigned int FLAG_VIDEO_JPEG_COLOURSPACE = 2; // force JPEG colour space
+  //}}}
 
   LibcameraApp (std::unique_ptr<Options> const opts = nullptr);
   virtual ~LibcameraApp();
@@ -210,51 +211,49 @@ protected:
 
 private:
   //{{{
-  template <typename T> class MessageQueue
-  {
+  template <typename T> class MessageQueue {
   public:
-    template <typename U>
-    void Post(U &&msg)
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
+    template <typename U> void Post(U &&msg) {
+      std::unique_lock<std::mutex> lock (mutex_);
       queue_.push(std::forward<U>(msg));
       cond_.notify_one();
-    }
-    T Wait()
-    {
+      }
+
+    T Wait() {
       std::unique_lock<std::mutex> lock(mutex_);
       cond_.wait(lock, [this] { return !queue_.empty(); });
-      T msg = std::move(queue_.front());
+      T msg = std::move (queue_.front());
       queue_.pop();
       return msg;
-    }
-    void Clear()
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
+      }
+
+    void Clear() {
+      std::unique_lock<std::mutex> lock (mutex_);
       queue_ = {};
-    }
+      }
 
   private:
     std::queue<T> queue_;
     std::mutex mutex_;
     std::condition_variable cond_;
-  };
+    };
   //}}}
   //{{{
-  struct PreviewItem
-  {
+  struct PreviewItem {
     PreviewItem() : stream(nullptr) {}
+
     PreviewItem(CompletedRequestPtr &b, Stream *s) : completed_request(b), stream(s) {}
-    PreviewItem &operator=(PreviewItem &&other)
-    {
+
+    PreviewItem &operator=(PreviewItem &&other) {
       completed_request = std::move(other.completed_request);
       stream = other.stream;
       other.stream = nullptr;
       return *this;
-    }
+      }
+
     CompletedRequestPtr completed_request;
     Stream *stream;
-  };
+    };
   //}}}
 
   void initCameraManager();
@@ -272,15 +271,19 @@ private:
   std::unique_ptr<CameraManager> camera_manager_;
   std::vector<std::shared_ptr<libcamera::Camera>> cameras_;
   std::shared_ptr<Camera> camera_;
+
   bool camera_acquired_ = false;
   std::unique_ptr<CameraConfiguration> configuration_;
+
   std::map<FrameBuffer*, std::vector<libcamera::Span<uint8_t>>> mapped_buffers_;
   std::map<std::string, Stream *> streams_;
   DmaHeap dma_heap_;
   std::map<Stream*, std::vector<std::unique_ptr<FrameBuffer>>> frame_buffers_;
   std::vector<std::unique_ptr<Request>> requests_;
+
   std::mutex completed_requests_mutex_;
   std::set<CompletedRequest *> completed_requests_;
+
   bool camera_started_ = false;
   std::mutex camera_stop_mutex_;
   MessageQueue<Msg> msg_queue_;

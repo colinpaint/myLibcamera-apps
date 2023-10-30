@@ -176,9 +176,9 @@ void LibcameraApp::OpenCamera() {
 
   // Make a preview window.
   preview_ = std::unique_ptr<Preview>(make_preview (options_.get()));
-  preview_->SetDoneCallback (std::bind(&LibcameraApp::previewDoneCallback, this, std::placeholders::_1));
+  preview_->SetDoneCallback (std::bind (&LibcameraApp::previewDoneCallback, this, std::placeholders::_1));
 
-  LOG(2, "Opening camera...");
+  LOG (2, "Opening camera...");
 
   if (!camera_manager_)
     initCameraManager();
@@ -191,7 +191,7 @@ void LibcameraApp::OpenCamera() {
     throw std::runtime_error ("selected camera is not available");
 
   std::string const &cam_id = cameras[options_->camera]->id();
-  camera_ = camera_manager_->get(cam_id);
+  camera_ = camera_manager_->get (cam_id);
   if (!camera_)
     throw std::runtime_error ("failed to find camera " + cam_id);
 
@@ -203,9 +203,11 @@ void LibcameraApp::OpenCamera() {
 
   if (!options_->post_process_file.empty())
     post_processor_.Read (options_->post_process_file);
+
   // The queue takes over ownership from the post-processor.
-  post_processor_.SetCallback(
-    [this](CompletedRequestPtr &r) { this->msg_queue_.Post (Msg(MsgType::RequestComplete, std::move(r))); });
+  post_processor_.SetCallback ([this](CompletedRequestPtr &r) { 
+    this->msg_queue_.Post (Msg (MsgType::RequestComplete, std::move (r))); 
+    });
 
   // We're going to make a list of all the available sensor modes, but we only populate
   // the framerate field if the user has requested a framerate (as this requires us actually
@@ -892,10 +894,9 @@ libcamera::Stream* LibcameraApp::LoresStream (StreamInfo* info) const { return G
 //{{{
 libcamera::Stream* LibcameraApp::GetMainStream() const {
 
-  for (auto &p : streams_) {
+  for (auto &p : streams_) 
     if (p.first == "viewfinder" || p.first == "still" || p.first == "video")
       return p.second;
-    }
 
   return nullptr;
   }
@@ -906,6 +907,7 @@ const libcamera::CameraManager* LibcameraApp::GetCameraManager() const { return 
 void LibcameraApp::ShowPreview (CompletedRequestPtr& completed_request, Stream* stream) {
 
   std::lock_guard<std::mutex> lock (preview_item_mutex_);
+
   if (!preview_item_.stream)
     preview_item_ = PreviewItem (completed_request, stream); // copy the shared_ptr here
   else
@@ -943,8 +945,7 @@ StreamInfo LibcameraApp::GetStreamInfo (Stream const* stream) const {
 //}}}
 //{{{
 void LibcameraApp::setupCapture() {
-
-  // First finish setting up the configuration.
+// First finish setting up the configuration.
 
   CameraConfiguration::Status validation = configuration_->validate();
   if (validation == CameraConfiguration::Invalid)
@@ -961,7 +962,6 @@ void LibcameraApp::setupCapture() {
     LOG (2, "    " << id->name() << " : " << info.toString());
 
   // Next allocate all the buffers we need, mmap them and store them on a free list.
-
   for (StreamConfiguration &config : *configuration_) {
     Stream *stream = config.stream();
     std::vector<std::unique_ptr<FrameBuffer>> fb;
@@ -1047,13 +1047,13 @@ void LibcameraApp::requestComplete (Request* request) {
     if (it == mapped_buffers_.end())
       throw std::runtime_error ("failed to identify request complete buffer");
 
-    int ret = ::ioctl(buffer_map.second->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+    int ret = ::ioctl (buffer_map.second->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
     if (ret)
       throw std::runtime_error ("failed to sync dma buf on request complete");
     }
 
-  CompletedRequest *r = new CompletedRequest(sequence_++, request);
-  CompletedRequestPtr payload(r, [this](CompletedRequest *cr) { this->queueRequest (cr); });
+  CompletedRequest *r = new CompletedRequest (sequence_++, request);
+  CompletedRequestPtr payload (r, [this](CompletedRequest *cr) { this->queueRequest (cr); });
   {
     std::lock_guard<std::mutex> lock (completed_requests_mutex_);
     completed_requests_.insert (r);
@@ -1062,7 +1062,7 @@ void LibcameraApp::requestComplete (Request* request) {
   // We calculate the instantaneous framerate in case anyone wants it.
   // Use the sensor timestamp if possible as it ought to be less glitchy than
   // the buffer timestamps.
-  auto ts = payload->metadata.get(controls::SensorTimestamp);
+  auto ts = payload->metadata.get (controls::SensorTimestamp);
   uint64_t timestamp = ts ? *ts : payload->buffers.begin()->second->metadata().timestamp;
   if (last_timestamp_ == 0 || last_timestamp_ == timestamp)
     payload->framerate = 0;
@@ -1116,7 +1116,7 @@ void LibcameraApp::previewThread() {
   while (true) {
     PreviewItem item;
     while (!item.stream) {
-      std::unique_lock<std::mutex> lock(preview_item_mutex_);
+      std::unique_lock<std::mutex> lock (preview_item_mutex_);
       if (preview_abort_) {
         preview_->Reset();
         return;
@@ -1136,12 +1136,11 @@ void LibcameraApp::previewThread() {
     libcamera::Span span = r.Get()[0];
 
     // Fill the frame info with the ControlList items and ancillary bits.
-    FrameInfo frame_info(item.completed_request->metadata);
+    FrameInfo frame_info (item.completed_request->metadata);
     frame_info.fps = item.completed_request->framerate;
     frame_info.sequence = item.completed_request->sequence;
 
     int fd = buffer->planes()[0].fd.get();
-
     {
       std::lock_guard<std::mutex> lock (preview_mutex_);
       // the reference to the shared_ptr moves to the map here
@@ -1149,7 +1148,7 @@ void LibcameraApp::previewThread() {
     }
 
     if (preview_->Quit()) {
-      LOG(2, "Preview window has quit");
+      LOG (2, "Preview window has quit");
       msg_queue_.Post (Msg(MsgType::Quit));
       }
 
@@ -1157,7 +1156,7 @@ void LibcameraApp::previewThread() {
     preview_->Show (fd, span, info);
     if (!options_->info_text.empty()) {
       std::string s = frame_info.ToString (options_->info_text);
-      preview_->SetInfoText(s);
+      preview_->SetInfoText (s);
       }
     }
   }
