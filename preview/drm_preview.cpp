@@ -228,7 +228,7 @@ void DrmPreview::findPlane() {
 //}}}
 
 //{{{
-DrmPreview::DrmPreview (Options const *options) : Preview(options), last_fd_(-1), first_time_(true) {
+DrmPreview::DrmPreview (Options const* options) : Preview(options), last_fd_(-1), first_time_(true) {
 
   drmfd_ = drmOpen ("vc4", NULL);
   if (drmfd_ < 0)
@@ -270,7 +270,7 @@ DrmPreview::~DrmPreview() { close(drmfd_); }
 // DRM doesn't seem to have userspace definitions of its enums, but the properties
 // contain enum-name-to-value tables. So the code below ends up using strings and
 // searching for name matches. I suppose it works...
-static void get_colour_space_info (std::optional<libcamera::ColorSpace> const &cs, char const *&encoding,
+static void get_colour_space_info (std::optional<libcamera::ColorSpace> const& cs, char const*& encoding,
                                    char const *&range) {
 
   static char const encoding_601[] = "601", encoding_709[] = "709";
@@ -289,7 +289,7 @@ static void get_colour_space_info (std::optional<libcamera::ColorSpace> const &c
   }
 //}}}
 //{{{
-static int drm_set_property (int fd, int plane_id, char const *name, char const *val) {
+static int drm_set_property (int fd, int plane_id, char const* name, char const* val) {
 
   drmModeObjectPropertiesPtr properties = nullptr;
   drmModePropertyPtr prop = nullptr;
@@ -336,7 +336,7 @@ done:
   }
 //}}}
 //{{{
-static void setup_colour_space (int fd, int plane_id, std::optional<libcamera::ColorSpace> const &cs) {
+static void setup_colour_space (int fd, int plane_id, std::optional<libcamera::ColorSpace> const& cs) {
 
   char const *encoding, *range;
   get_colour_space_info (cs, encoding, range);
@@ -347,7 +347,7 @@ static void setup_colour_space (int fd, int plane_id, std::optional<libcamera::C
 //}}}
 
 //{{{
-void DrmPreview::makeBuffer (int fd, size_t size, StreamInfo const &info, Buffer &buffer) {
+void DrmPreview::makeBuffer (int fd, size_t size, StreamInfo const& info, Buffer& buffer) {
 
   if (first_time_) {
     first_time_ = false;
@@ -370,7 +370,7 @@ void DrmPreview::makeBuffer (int fd, size_t size, StreamInfo const &info, Buffer
    }
 //}}}
 //{{{
-void DrmPreview::Show (int fd, libcamera::Span<uint8_t> span, StreamInfo const &info) {
+void DrmPreview::Show (int fd, libcamera::Span<uint8_t> span, StreamInfo const& info) {
 
   Buffer &buffer = buffers_[fd];
   if (buffer.fd == -1)
@@ -413,4 +413,4 @@ void DrmPreview::Reset() {
   }
 //}}}
 
-Preview* make_drm_preview (Options const *options) { return new DrmPreview (options); }
+Preview* make_drm_preview (Options const* options) { return new DrmPreview (options); }

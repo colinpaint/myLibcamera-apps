@@ -52,11 +52,11 @@ Platform get_platform() {
     if (!strncmp ((char *)caps.driver, "uvcvideo", sizeof(caps.card)))
       continue;
 
-    if (!strncmp ((char *)caps.card, "unicam", sizeof(caps.card)))
+    if (!strncmp ((char*)caps.card, "unicam", sizeof(caps.card)))
       return Platform::VC4;
-    else if (!strncmp ((char *)caps.card, "rp1-cfe", sizeof(caps.card)))
+    else if (!strncmp ((char*)caps.card, "rp1-cfe", sizeof(caps.card)))
       return Platform::PISP;
-    else if (!strncmp ((char *)caps.card, "bm2835 mmal", sizeof(caps.card)))
+    else if (!strncmp ((char*)caps.card, "bm2835 mmal", sizeof(caps.card)))
       return Platform::LEGACY;
     else
       unknown = true;
@@ -67,7 +67,7 @@ Platform get_platform() {
 //}}}
 
 //{{{
-static libcamera::PixelFormat mode_to_pixel_format (Mode const &mode) {
+static libcamera::PixelFormat mode_to_pixel_format (Mode const& mode) {
 // The saving grace here is that we can ignore the Bayer order and return anything -
 // our pipeline handler will give us back the order that works, whilst respecting the
 // bit depth and packing. We may get a "stream adjusted" message, which we can ignore.
@@ -82,7 +82,9 @@ static libcamera::PixelFormat mode_to_pixel_format (Mode const &mode) {
     };
 
   auto it = std::find_if (table.begin(), table.end(),
-                          [&mode] (auto &m) { return mode.bit_depth == m.first.bit_depth && mode.packed == m.first.packed; });
+                          [&mode] (auto& m) {
+                            return mode.bit_depth == m.first.bit_depth && mode.packed == m.first.packed; 
+                            });
   if (it != table.end())
     return it->second;
 
@@ -205,8 +207,8 @@ void LibcameraApp::OpenCamera() {
     post_processor_.Read (options_->post_process_file);
 
   // The queue takes over ownership from the post-processor.
-  post_processor_.SetCallback ([this](CompletedRequestPtr &r) { 
-    this->msg_queue_.Post (Msg (MsgType::RequestComplete, std::move (r))); 
+  post_processor_.SetCallback ([this](CompletedRequestPtr &r) {
+    this->msg_queue_.Post (Msg (MsgType::RequestComplete, std::move (r)));
     });
 
   // We're going to make a list of all the available sensor modes, but we only populate
@@ -255,7 +257,7 @@ void LibcameraApp::CloseCamera() {
   camera_manager_.reset();
 
   if (!options_->help)
-    LOG(2, "Camera closed");
+    LOG (2, "Camera closed");
   }
 //}}}
 
@@ -402,9 +404,9 @@ void LibcameraApp::ConfigureZsl (unsigned int still_flags) {
 
   StreamRoles stream_roles = { StreamRole::StillCapture, StreamRole::Viewfinder };
   if (!options_->no_raw)
-    stream_roles.push_back(StreamRole::Raw);
+    stream_roles.push_back (StreamRole::Raw);
 
-  configuration_ = camera_->generateConfiguration(stream_roles);
+  configuration_ = camera_->generateConfiguration (stream_roles);
   if (!configuration_)
     throw std::runtime_error("failed to generate viewfinder configuration");
 
@@ -499,7 +501,7 @@ void LibcameraApp::ConfigureStill (unsigned int flags) {
   StreamRoles stream_roles = { StreamRole::StillCapture };
   if (!options_->no_raw)
     stream_roles.push_back(StreamRole::Raw);
-  configuration_ = camera_->generateConfiguration(stream_roles);
+  configuration_ = camera_->generateConfiguration (stream_roles);
   if (!configuration_)
     throw std::runtime_error("failed to generate still capture configuration");
 
@@ -629,7 +631,7 @@ void LibcameraApp::Teardown() {
   post_processor_.Teardown();
 
   if (!options_->help)
-    LOG(2, "Tearing down requests, buffers and configuration");
+    LOG (2, "Tearing down requests, buffers and configuration");
 
   for (auto &iter : mapped_buffers_) {
     // assert(iter.first->planes().size() == iter.second.size());
@@ -664,7 +666,7 @@ void LibcameraApp::StartCamera() {
     crop.translateBy (sensor_area.topLeft());
     LOG(2, "Using crop " << crop.toString());
     controls_.set (controls::ScalerCrop, crop);
-  }
+    }
 
   if (!controls_.get(controls::AfWindows) && !controls_.get(controls::AfMetering)
       && options_->afWindow_width != 0 && options_->afWindow_height != 0) {
@@ -734,7 +736,7 @@ void LibcameraApp::StartCamera() {
       else
         afm = camera_->controls().at(&controls::AfMode).max().get<int>();
       }
-    controls_.set(controls::AfMode, afm);
+    controls_.set (controls::AfMode, afm);
     }
   if (!controls_.get (controls::AfRange) && camera_->controls().count(&controls::AfRange) > 0)
     controls_.set (controls::AfRange, options_->afRange_index);
@@ -839,7 +841,7 @@ void LibcameraApp::queueRequest (CompletedRequest* completed_request) {
       request_found = false;
   }
 
-  Request *request = completed_request->request;
+  Request* request = completed_request->request;
   delete completed_request;
   assert (request);
 
@@ -894,7 +896,7 @@ libcamera::Stream* LibcameraApp::LoresStream (StreamInfo* info) const { return G
 //{{{
 libcamera::Stream* LibcameraApp::GetMainStream() const {
 
-  for (auto &p : streams_) 
+  for (auto &p : streams_)
     if (p.first == "viewfinder" || p.first == "still" || p.first == "video")
       return p.second;
 
@@ -962,8 +964,8 @@ void LibcameraApp::setupCapture() {
     LOG (2, "    " << id->name() << " : " << info.toString());
 
   // Next allocate all the buffers we need, mmap them and store them on a free list.
-  for (StreamConfiguration &config : *configuration_) {
-    Stream *stream = config.stream();
+  for (StreamConfiguration& config : *configuration_) {
+    Stream* stream = config.stream();
     std::vector<std::unique_ptr<FrameBuffer>> fb;
 
     for (unsigned int i = 0; i < config.bufferCount; i++) {
@@ -996,7 +998,7 @@ void LibcameraApp::setupCapture() {
 //{{{
 void LibcameraApp::makeRequests() {
 
-  std::map<Stream *, std::queue<FrameBuffer*>> free_buffers;
+  std::map<Stream*, std::queue<FrameBuffer*>> free_buffers;
 
   for (auto &kv : frame_buffers_) {
     free_buffers[kv.first] = {};
@@ -1020,7 +1022,7 @@ void LibcameraApp::makeRequests() {
       else if (free_buffers[stream].empty())
         throw std::runtime_error ("concurrent streams need matching numbers of buffers");
 
-      FrameBuffer *buffer = free_buffers[stream].front();
+      FrameBuffer* buffer = free_buffers[stream].front();
       free_buffers[stream].pop();
       if (requests_.back()->addBuffer (stream, buffer) < 0)
         throw std::runtime_error ("failed to add buffer to request");
@@ -1052,7 +1054,7 @@ void LibcameraApp::requestComplete (Request* request) {
       throw std::runtime_error ("failed to sync dma buf on request complete");
     }
 
-  CompletedRequest *r = new CompletedRequest (sequence_++, request);
+  CompletedRequest* r = new CompletedRequest (sequence_++, request);
   CompletedRequestPtr payload (r, [this](CompletedRequest *cr) { this->queueRequest (cr); });
   {
     std::lock_guard<std::mutex> lock (completed_requests_mutex_);
@@ -1131,7 +1133,7 @@ void LibcameraApp::previewThread() {
       throw std::runtime_error ("Preview windows only support YUV420");
 
     StreamInfo info = GetStreamInfo(item.stream);
-    FrameBuffer *buffer = item.completed_request->buffers[item.stream];
+    FrameBuffer* buffer = item.completed_request->buffers[item.stream];
     BufferReadSync r(this, buffer);
     libcamera::Span span = r.Get()[0];
 
