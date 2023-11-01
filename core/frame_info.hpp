@@ -22,52 +22,50 @@ struct FrameInfo {
     : exposure_time(0.0), digital_gain(0.0), colour_gains({ { 0.0f, 0.0f } }), focus(0.0), aelock(false),
       lens_position(-1.0), af_state(0) {
 
-    auto exp = ctrls.get(libcamera::controls::ExposureTime);
+    auto exp = ctrls.get (libcamera::controls::ExposureTime);
     if (exp)
       exposure_time = *exp;
 
-    auto ag = ctrls.get(libcamera::controls::AnalogueGain);
+    auto ag = ctrls.get (libcamera::controls::AnalogueGain);
     if (ag)
       analogue_gain = *ag;
 
-    auto dg = ctrls.get(libcamera::controls::DigitalGain);
+    auto dg = ctrls.get (libcamera::controls::DigitalGain);
     if (dg)
       digital_gain = *dg;
 
-    auto cg = ctrls.get(libcamera::controls::ColourGains);
+    auto cg = ctrls.get (libcamera::controls::ColourGains);
     if (cg)
       colour_gains[0] = (*cg)[0], colour_gains[1] = (*cg)[1];
 
-    auto fom = ctrls.get(libcamera::controls::FocusFoM);
+    auto fom = ctrls.get (libcamera::controls::FocusFoM);
     if (fom)
       focus = *fom;
 
-    auto ae = ctrls.get(libcamera::controls::AeLocked);
+    auto ae = ctrls.get (libcamera::controls::AeLocked);
     if (ae)
       aelock = *ae;
 
-    auto lp = ctrls.get(libcamera::controls::LensPosition);
+    auto lp = ctrls.get (libcamera::controls::LensPosition);
     if (lp)
       lens_position = *lp;
 
-    auto afs = ctrls.get(libcamera::controls::AfState);
+    auto afs = ctrls.get (libcamera::controls::AfState);
     if (afs)
       af_state = *afs;
-  }
+    }
   //}}}
 
   //{{{
-  std::string ToString (std::string &info_string) const
-  {
+  std::string ToString (std::string &info_string) const {
+
     std::string parsed(info_string);
 
-    for (auto const &t : tokens)
-    {
-      std::size_t pos = parsed.find(t);
-      if (pos != std::string::npos)
-      {
+    for (auto const& t : tokens) {
+      std::size_t pos = parsed.find (t);
+      if (pos != std::string::npos) {
         std::stringstream value;
-        value << std::fixed << std::setprecision(2);
+        value << std::fixed << std::setprecision (2);
 
         if (t == "%frame")
           value << sequence;
@@ -89,30 +87,28 @@ struct FrameInfo {
           value << aelock;
         else if (t == "%lp")
           value << lens_position;
-        else if (t == "%afstate")
-        {
-          switch (af_state)
-          {
-          case libcamera::controls::AfStateIdle:
-            value << "idle";
-            break;
-          case libcamera::controls::AfStateScanning:
-            value << "scanning";
-            break;
-          case libcamera::controls::AfStateFocused:
-            value << "focused";
-            break;
-          default:
-            value << "failed";
+        else if (t == "%afstate") {
+          switch (af_state) {
+            case libcamera::controls::AfStateIdle:
+              value << "idle";
+              break;
+            case libcamera::controls::AfStateScanning:
+              value << "scanning";
+              break;
+            case libcamera::controls::AfStateFocused:
+              value << "focused";
+              break;
+            default:
+              value << "failed";
+            }
           }
-        }
 
         parsed.replace(pos, t.length(), value.str());
+        }
       }
-    }
 
     return parsed;
-  }
+    }
   //}}}
 
   unsigned int sequence;

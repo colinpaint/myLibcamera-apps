@@ -53,8 +53,6 @@ DmaHeap::~DmaHeap() { }
 //{{{
 libcamera::UniqueFD DmaHeap::alloc (const char *name, std::size_t size) const {
 
-  int ret;
-
   if (!name)
     return {};
 
@@ -63,7 +61,7 @@ libcamera::UniqueFD DmaHeap::alloc (const char *name, std::size_t size) const {
   alloc.len = size;
   alloc.fd_flags = O_CLOEXEC | O_RDWR;
 
-  ret = ::ioctl (dmaHeapHandle_.get(), DMA_HEAP_IOCTL_ALLOC, &alloc);
+  int ret = ::ioctl (dmaHeapHandle_.get(), DMA_HEAP_IOCTL_ALLOC, &alloc);
   if (ret < 0) {
     LOG_ERROR ("dmaHeap allocation failure for " << name);
     return {};

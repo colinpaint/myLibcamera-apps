@@ -17,7 +17,7 @@
 //}}}
 
 //{{{
-BufferWriteSync::BufferWriteSync (LibcameraApp *app, libcamera::FrameBuffer *fb) : fb_(fb) {
+BufferWriteSync::BufferWriteSync (LibcameraApp* app, libcamera::FrameBuffer* fb) : fb_(fb) {
 
   struct dma_buf_sync dma_sync {};
   dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;

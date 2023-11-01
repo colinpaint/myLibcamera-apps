@@ -32,11 +32,10 @@ namespace {
   //{{{
   int get_key_or_signal (VideoOptions const* options, pollfd p[1]) {
 
-    int key = 0;
-
     if (signal_received == SIGINT)
       return 'x';
 
+    int key = 0;
     if (options->keypress) {
       poll(p, 1, 0);
       if (p[0].revents & POLLIN) {
@@ -121,7 +120,7 @@ namespace {
         return;
         }
 
-      CompletedRequestPtr &completed_request = get<CompletedRequestPtr>(msg.payload);
+      CompletedRequestPtr& completed_request = get<CompletedRequestPtr>(msg.payload);
       app.EncodeBuffer (completed_request, app.VideoStream());
       app.ShowPreview (completed_request, app.VideoStream());
       }

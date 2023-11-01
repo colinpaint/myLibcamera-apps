@@ -6,11 +6,11 @@
  * circular_output.cpp - Write output to circular buffer which we save on exit.
  */
 //}}}
-
 //{{{  includes
 #include "circular_output.hpp"
 
 //}}}
+
 // We're going to align the frames within the buffer to friendly byte boundaries
 static constexpr int ALIGN = 16; // power of 2, please
 
@@ -25,19 +25,19 @@ struct Header
 static_assert(sizeof(Header) % ALIGN == 0, "Header should have aligned size");
 
 //{{{
+CircularOutput::CircularOutput (VideoOptions const* options) 
+    : Output(options), cb_(options->circular<<20) {
 // Size of buffer (options->circular) is given in megabytes.
-CircularOutput::CircularOutput(VideoOptions const *options) : Output(options), cb_(options->circular<<20)
-{
+
   // Open this now, so that we can get any complaints out of the way
   if (options_->output == "-")
     fp_ = stdout;
   else if (!options_->output.empty())
-  {
-    fp_ = fopen(options_->output.c_str(), "w");
-  }
+    fp_ = fopen (options_->output.c_str(), "w");
+
   if (!fp_)
-    throw std::runtime_error("could not open output file");
-}
+    throw std::runtime_error ("could not open output file");
+  }
 //}}}
 //{{{
 CircularOutput::~CircularOutput()
@@ -78,33 +78,30 @@ CircularOutput::~CircularOutput()
 //}}}
 
 //{{{
-void CircularOutput::outputBuffer(void *mem, size_t size, int64_t timestamp_us, uint32_t flags)
-{
+void CircularOutput::outputBuffer (void* mem, size_t size, int64_t timestamp_us, uint32_t flags) {
+
   // First make sure there's enough space.
   int pad = (ALIGN - size) & (ALIGN - 1);
-  while (size + pad + sizeof(Header) > cb_.Available())
-  {
+  while (size + pad + sizeof(Header) > cb_.Available()) {
     if (cb_.Empty())
       throw std::runtime_error("circular buffer too small");
+
     Header header;
-    uint8_t *dst = (uint8_t *)&header;
-    cb_.Read(
-      [&dst](void *src, int n) {
-        memcpy(dst, src, n);
-        dst += n;
-      },
-      sizeof(header));
-    cb_.Skip((header.length + ALIGN - 1) & ~(ALIGN - 1));
-  }
+    uint8_t* dst = (uint8_t*)&header;
+    cb_.Read ([&dst](void* src, int n) {
+                       memcpy (dst, src, n);
+                       dst += n;
+                       },
+              sizeof(header));
+    cb_.Skip ((header.length + ALIGN - 1) & ~(ALIGN - 1));
+    }
+
   Header header = { static_cast<unsigned int>(size), !!(flags & FLAG_KEYFRAME), timestamp_us };
-  cb_.Write(&header, sizeof(header));
-  cb_.Write(mem, size);
-  cb_.Pad(pad);
+  cb_.Write (&header, sizeof(header));
+  cb_.Write (mem, size);
+  cb_.Pad (pad);
 }
 //}}}
-//{{{
-void CircularOutput::timestampReady(int64_t timestamp)
-{
-  // Don't want to save every timestamp as we go along, only outputs them at the end
-}
-//}}}
+
+// Don't want to save every timestamp as we go along, only outputs them at the end
+void CircularOutput::timestampReady (int64_t timestamp) {}

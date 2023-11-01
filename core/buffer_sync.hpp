@@ -11,29 +11,27 @@
 
 class LibcameraApp;
 //{{{
-class BufferWriteSync
-{
+class BufferWriteSync {
 public:
-  BufferWriteSync(LibcameraApp *app, libcamera::FrameBuffer *fb);
+  BufferWriteSync (LibcameraApp* app, libcamera::FrameBuffer* fb);
   ~BufferWriteSync();
 
   const std::vector<libcamera::Span<uint8_t>> &Get() const;
 
 private:
-  libcamera::FrameBuffer *fb_;
+  libcamera::FrameBuffer* fb_;
   std::vector<libcamera::Span<uint8_t>> planes_;
-};
+  };
 //}}}
 //{{{
-class BufferReadSync
-{
+class BufferReadSync {
 public:
-  BufferReadSync(LibcameraApp *app, libcamera::FrameBuffer *fb);
+  BufferReadSync (LibcameraApp* app, libcamera::FrameBuffer* fb);
   ~BufferReadSync();
 
   const std::vector<libcamera::Span<uint8_t>> &Get() const;
 
 private:
   std::vector<libcamera::Span<uint8_t>> planes_;
-};
+  };
 //}}}
