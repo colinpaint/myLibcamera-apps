@@ -667,19 +667,23 @@ void LibcameraApp::StartCamera() {
     controls_.set (controls::ScalerCrop, crop);
     }
 
-  if (!controls_.get(controls::AfWindows) && !controls_.get(controls::AfMetering)
-      && options_->afWindow_width != 0 && options_->afWindow_height != 0) {
-    Rectangle sensor_area = *camera_->properties().get(properties::ScalerCropMaximum);
+  if (!controls_.get(controls::AfWindows) && 
+      !controls_.get(controls::AfMetering) && 
+      options_->afWindow_width != 0 && 
+      options_->afWindow_height != 0) {
+    Rectangle sensor_area = *camera_->properties().get (properties::ScalerCropMaximum);
     int x = options_->afWindow_x * sensor_area.width;
     int y = options_->afWindow_y * sensor_area.height;
     int w = options_->afWindow_width * sensor_area.width;
     int h = options_->afWindow_height * sensor_area.height;
     Rectangle afwindows_rectangle[1];
     afwindows_rectangle[0] = Rectangle(x, y, w, h);
-    afwindows_rectangle[0].translateBy(sensor_area.topLeft());
+    afwindows_rectangle[0].translateBy (sensor_area.topLeft());
     LOG(2, "Using AfWindow " << afwindows_rectangle[0].toString());
+
     //activate the AfMeteringWindows
     controls_.set (controls::AfMetering, controls::AfMeteringWindows);
+
     //set window
     controls_.set (controls::AfWindows, afwindows_rectangle);
     }
@@ -730,8 +734,8 @@ void LibcameraApp::StartCamera() {
     int afm = options_->afMode_index;
     if (afm == -1) {
       // Choose a default AF mode based on other options
-      if (options_->lens_position || 
-          options_->set_default_lens_position || 
+      if (options_->lens_position ||
+          options_->set_default_lens_position ||
           options_->af_on_capture)
         afm = controls::AfModeManual;
       else
@@ -857,7 +861,7 @@ void LibcameraApp::queueRequest (CompletedRequest* completed_request) {
     if (it == mapped_buffers_.end())
       throw std::runtime_error ("failed to identify queue request buffer");
 
-    int ret = ::ioctl(p.second->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+    int ret = ::ioctl (p.second->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
     if (ret)
       throw std::runtime_error ("failed to sync dma buf on queue request");
 
@@ -946,6 +950,7 @@ StreamInfo LibcameraApp::GetStreamInfo (Stream const* stream) const {
   return info;
   }
 //}}}
+
 //{{{
 void LibcameraApp::setupCapture() {
 // First finish setting up the configuration.
@@ -981,8 +986,8 @@ void LibcameraApp::setupCapture() {
       plane[0].offset = 0;
       plane[0].length = config.frameSize;
 
-      fb.push_back(std::make_unique<FrameBuffer>(plane));
-      void *memory = mmap(NULL, config.frameSize, PROT_READ | PROT_WRITE, MAP_SHARED, plane[0].fd.get(), 0);
+      fb.push_back (std::make_unique<FrameBuffer>(plane));
+      void* memory = mmap (NULL, config.frameSize, PROT_READ | PROT_WRITE, MAP_SHARED, plane[0].fd.get(), 0);
       mapped_buffers_[fb.back().get()].push_back (libcamera::Span<uint8_t>(static_cast<uint8_t*>(memory),
                                                   config.frameSize));
       }
