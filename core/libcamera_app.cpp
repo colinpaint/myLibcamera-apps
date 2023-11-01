@@ -41,7 +41,6 @@ Platform get_platform() {
 
     v4l2_capability caps;
     unsigned long request = VIDIOC_QUERYCAP;
-
     int ret = ioctl (fd, request, &caps);
     close (fd);
 
@@ -83,7 +82,7 @@ static libcamera::PixelFormat mode_to_pixel_format (Mode const& mode) {
 
   auto it = std::find_if (table.begin(), table.end(),
                           [&mode] (auto& m) {
-                            return mode.bit_depth == m.first.bit_depth && mode.packed == m.first.packed; 
+                            return (mode.bit_depth == m.first.bit_depth) && (mode.packed == m.first.packed);
                             });
   if (it != table.end())
     return it->second;
@@ -346,7 +345,7 @@ void LibcameraApp::ConfigureViewfinder() {
 
   // Finally trim the image size to the largest that the preview can handle.
   Size max_size;
-  preview_->MaxImageSize(max_size.width, max_size.height);
+  preview_->MaxImageSize (max_size.width, max_size.height);
   if (max_size.width && max_size.height) {
     size.boundTo (max_size.boundedToAspectRatio(size)).alignDownTo(2, 2);
     LOG (2, "Final viewfinder size is " << size.toString());
@@ -408,7 +407,7 @@ void LibcameraApp::ConfigureZsl (unsigned int still_flags) {
 
   configuration_ = camera_->generateConfiguration (stream_roles);
   if (!configuration_)
-    throw std::runtime_error("failed to generate viewfinder configuration");
+    throw std::runtime_error ("failed to generate viewfinder configuration");
 
   // Now we get to override any of the default settings from the options_->
   if (still_flags & FLAG_STILL_BGR)
@@ -457,7 +456,7 @@ void LibcameraApp::ConfigureZsl (unsigned int still_flags) {
     // afterwards - so try to match the field of view.
     if (options_->width && options_->height)
       size = size.boundedToAspectRatio (Size(options_->width, options_->height));
-    size.alignDownTo(2, 2); // YUV420 will want to be even
+    size.alignDownTo (2, 2); // YUV420 will want to be even
 
     LOG (2, "Viewfinder size chosen is " << size.toString());
     }
@@ -568,7 +567,7 @@ void LibcameraApp::ConfigureVideo (unsigned int flags) {
     throw std::runtime_error ("failed to generate video configuration");
 
   // Now we get to override any of the default settings from the options_->
-  StreamConfiguration &cfg = configuration_->at(0);
+  StreamConfiguration& cfg = configuration_->at(0);
   cfg.pixelFormat = libcamera::formats::YUV420;
   cfg.bufferCount = 6; // 6 buffers is better than 4
   if (options_->buffer_count > 0)
@@ -602,7 +601,7 @@ void LibcameraApp::ConfigureVideo (unsigned int flags) {
     Size lores_size(options_->lores_width, options_->lores_height);
     lores_size.alignDownTo(2, 2);
     if (lores_size.width > configuration_->at(0).size.width ||
-      lores_size.height > configuration_->at(0).size.height)
+        lores_size.height > configuration_->at(0).size.height)
       throw std::runtime_error("Low res image larger than video");
     configuration_->at(lores_index).pixelFormat = libcamera::formats::YUV420;
     configuration_->at(lores_index).size = lores_size;
@@ -706,9 +705,9 @@ void LibcameraApp::StartCamera() {
   if (!controls_.get (controls::AeMeteringMode))
     controls_.set (controls::AeMeteringMode, options_->metering_index);
   if (!controls_.get (controls::AeExposureMode))
-    controls_.set(controls::AeExposureMode, options_->exposure_index);
+    controls_.set (controls::AeExposureMode, options_->exposure_index);
   if (!controls_.get (controls::ExposureValue))
-    controls_.set(controls::ExposureValue, options_->ev);
+    controls_.set (controls::ExposureValue, options_->ev);
   if (!controls_.get (controls::AwbMode))
     controls_.set (controls::AwbMode, options_->awb_index);
   if (!controls_.get (controls::ColourGains) && options_->awb_gain_r && options_->awb_gain_b)
@@ -731,7 +730,9 @@ void LibcameraApp::StartCamera() {
     int afm = options_->afMode_index;
     if (afm == -1) {
       // Choose a default AF mode based on other options
-      if (options_->lens_position || options_->set_default_lens_position || options_->af_on_capture)
+      if (options_->lens_position || 
+          options_->set_default_lens_position || 
+          options_->af_on_capture)
         afm = controls::AfModeManual;
       else
         afm = camera_->controls().at(&controls::AfMode).max().get<int>();
@@ -758,8 +759,8 @@ void LibcameraApp::StartCamera() {
       f = options_->lens_position.value();
     else
       f = camera_->controls().at(&controls::LensPosition).def().get<float>();
-    LOG(2, "Setting LensPosition: " << f);
-    controls_.set(controls::LensPosition, f);
+    LOG (2, "Setting LensPosition: " << f);
+    controls_.set (controls::LensPosition, f);
     }
 
   if (options_->flicker_period && !controls_.get(controls::AeFlickerMode) &&

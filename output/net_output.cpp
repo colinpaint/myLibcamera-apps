@@ -110,6 +110,7 @@ void NetOutput::outputBuffer (void* mem, size_t size, int64_t /*timestamp_us*/, 
     size_t bytes_to_send = std::min(size, max_size);
     if (sendto (fd_, ptr, bytes_to_send, 0, saddr_ptr_, sockaddr_in_size_) < 0)
       throw std::runtime_error ("failed to send data on socket");
+
     ptr += bytes_to_send;
     size -= bytes_to_send;
     }
